@@ -1,0 +1,162 @@
+body{
+	font-family: 'Urbanist';
+	background: black;
+	color: lightgray;
+}
+
+h1, h2, h3, h4{
+	font-family: 'Audiowide';
+}
+
+.container{
+	max-width: 840px;
+	margin:  0 auto;
+}
+
+.container > div{
+	margin: 20px auto;
+}
+
+.intro{
+	text-align: center;
+}
+
+.about-grid{
+	display: grid;
+	grid-template-columns: 50% 50%;
+}
+
+.i-am, .i-like{
+	text-align: center;
+}
+
+.about-list{
+	list-style: none;
+}
+
+@media(max-width:  480px){
+	.about-grid{
+		grid-template-columns: 100%;
+	}
+}
+
+.projects-heading{
+	text-align: center;
+}
+
+.projects-grid{
+	display: grid;
+	grid-template-columns: 50% 50%;
+}
+
+.project-image{
+	border-radius: 5px;
+	box-shadow: 0 4px 6px 0 rgba(34, 60, 80, .16);
+	transition: all ease-in-out .2s;
+}
+
+.project-image:hover{
+	filter: brightness(.75);
+	box-shadow: 4px 4px 12px 0 rgba(255, 255, 0, .75), -4px -4px 12px 0 rgba(255, 255, 0, .75), -4px 4px 12px 0 rgba(255, 255, 0, .75), 4px -4px 12px 0 rgba(255, 255, 0, .75);
+}
+
+.project-image-wrapper{
+	justify-self: center;
+	padding: 4%;
+	position: relative;
+}
+
+.project-image-wrapper:hover > h4{
+	visibility: visible;
+}
+
+.project-image-wrapper > h4{
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -200%);
+	padding: 5px;
+	color: white;
+	visibility: hidden;
+	z-index: 2;
+	transition: all ease-in-out .2s;
+	background-color: rgba(34, 60, 80, 0.9);
+}
+
+@media(max-width:  650px){
+	.projects-grid{
+		grid-template-columns: 100%;
+	}
+}
+
+.links-and-contact{
+	display: grid;
+	grid-template-columns: 50% 50%;
+}
+
+.links, .contact{
+	justify-self: center;
+	text-align: center;
+}
+
+.links-list{
+	list-style: none;
+	padding: 0;
+	background-color: lightgray;
+	padding: 5px;
+	border-radius: 5px;
+	width: 240px;
+}
+
+@media(max-width:  650px){
+	.links-and-contact{
+		grid-template-columns: 100%;
+	}
+}
+
+.profile-pic{
+	border-radius: 50%;
+	width: 150px;
+	margin-top: 5px;
+	margin-bottom: 5px;
+	height: 150px;
+	transition: all ease-in-out .2s;
+}
+
+.profile-pic:hover{
+	width: 160px;
+	height: 160px;
+	margin-top: 0px;
+	margin-bottom: 0px;
+	box-shadow: 4px 4px 8px 0 rgba(255, 255, 0, .75), -4px -4px 8px 0 rgba(255, 255, 0, .75), 4px -4px 8px 0 rgba(255, 255, 0, .75), -4px 4px 8px 0 rgba(255, 255, 0, .75);
+}
+
+form input, textarea{
+	padding: 5px;
+	border-radius: 5px;
+	width: 240px;
+	background-color: lightgray;
+}
+
+form input[type="submit"]{
+	width: 250px;
+	background-color: black;
+	color: lightgray;
+	border-color: lightgray;
+}
+
+form input:hover[type="submit"]{
+	background-color: lightgray;
+	color: black;
+	border-color: darkgray;
+}
+
+.submit-button-wrapper{
+	margin: 20px 0;
+}
+
+hr{
+	border: 0;
+	height: 1px;
+	background-image: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0));
+}
