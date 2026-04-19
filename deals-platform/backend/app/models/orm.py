@@ -224,6 +224,9 @@ class LLMCall(Base):
     output_tokens: Mapped[int] = mapped_column(Integer, default=0)
     cost_usd: Mapped[float] = mapped_column(Float, default=0.0)
     ts: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    hallucination_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    evidence_coverage_pct: Mapped[float] = mapped_column(Float, default=0.0)
+    unsupported_claim_count: Mapped[int] = mapped_column(Integer, default=0)
 
 
 class Upload(Base):

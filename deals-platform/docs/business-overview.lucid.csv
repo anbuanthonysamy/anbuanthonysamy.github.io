@@ -14,59 +14,61 @@ Id,Name,Shape Library,Page ID,Contained By,Line Source,Line Destination,Source A
 13,"Signal handlers / (declarative, per domain)",Shapes,1,,,,,,"Signal handlers / (declarative, per domain)",3. Shared spine,#E8E8E8
 14,Weighted scoring / (tunable per module),Shapes,1,,,,,,Weighted scoring / (tunable per module),3. Shared spine,#E8E8E8
 15,Evidence-grounded / explanation layer,Shapes,1,,,,,,Evidence-grounded / explanation layer,3. Shared spine,#E8E8E8
-16,Unsupported-claims / critic (blocks in CI),Shapes,1,,,,,,Unsupported-claims / critic (blocks in CI),3. Shared spine,#E8E8E8
-17,LLM router / Haiku: extract / classify / Sonnet: synthesis / explain,Shapes,1,,,,,,LLM router / Haiku: extract / classify / Sonnet: synthesis / explain,3. Shared spine,#E8E8E8
-18,CS1 — M&A Origination / public only · 12-24m / >$1bn equity,Shapes,1,,,,,,CS1 — M&A Origination / public only · 12-24m / >$1bn equity,4. Modules,#D6E9FF
-19,CS2 — Carve-Out Detection / public only · 6-18m / >$750m equity,Shapes,1,,,,,,CS2 — Carve-Out Detection / public only · 6-18m / >$750m equity,4. Modules,#D6E9FF
-20,CS3 — Post-Deal Value Tracker / client + public · 0-24m,Shapes,1,,,,,,CS3 — Post-Deal Value Tracker / client + public · 0-24m,4. Modules,#FFE3D6
-21,CS4 — Working-Capital Diagnostic / client + XBRL peers · 3-9m,Shapes,1,,,,,,CS4 — Working-Capital Diagnostic / client + XBRL peers · 3-9m,4. Modules,#FFE3D6
-22,Ranked situation queue / (score + confidence),Shapes,1,,,,,,Ranked situation queue / (score + confidence),5. Outputs,#E4F7E1
-23,Sector heatmap / (CS1 / CS2),Shapes,1,,,,,,Sector heatmap / (CS1 / CS2),5. Outputs,#E4F7E1
-24,KPI trend-band charts / (CS3: in / above / below band),Shapes,1,,,,,,KPI trend-band charts / (CS3: in / above / below band),5. Outputs,#E4F7E1
-25,Working-capital diagnostic / (DSO / DPO / DIO vs peers),Shapes,1,,,,,,Working-capital diagnostic / (DSO / DPO / DIO vs peers),5. Outputs,#E4F7E1
-26,Per-item explanation / + evidence panel + caveats,Shapes,1,,,,,,Per-item explanation / + evidence panel + caveats,5. Outputs,#E4F7E1
-27,Human review queue / (analyst triage),Shapes,1,,,,,,Human review queue / (analyst triage),6. Review,#FFF5BA
-28,Approve? / requires reviewer + / ts + reason,Shapes,1,,,,,,Approve? / requires reviewer + / ts + reason,6. Review,#FFF5BA
-29,Approved recommendation / (surfaced to business),Shapes,1,,,,,,Approved recommendation / (surfaced to business),6. Review,#E4F7E1
-30,Reviewer labels / (accept / edit / reject),Shapes,1,,,,,,Reviewer labels / (accept / edit / reject),7. Feedback,#F0D6FF
-31,Weight tuning / + calibration,Shapes,1,,,,,,Weight tuning / + calibration,7. Feedback,#F0D6FF
-32,Coverage + label dashboards / (/eval),Shapes,1,,,,,,Coverage + label dashboards / (/eval),7. Feedback,#F0D6FF
-33,,Shapes,1,,1,7,None,Arrow,,main flow,
-34,,Shapes,1,,2,7,None,Arrow,,main flow,
-35,,Shapes,1,,3,7,None,Arrow,,main flow,
-36,,Shapes,1,,4,7,None,Arrow,,main flow,
-37,,Shapes,1,,5,7,None,Arrow,,main flow,
-38,,Shapes,1,,6,7,None,Arrow,,main flow,
-39,,Shapes,1,,7,8,None,Arrow,,main flow,
-40,,Shapes,1,,8,9,None,Arrow,,main flow,
-41,,Shapes,1,,9,10,None,Arrow,,main flow,
-42,,Shapes,1,,10,11,None,Arrow,,main flow,
-43,,Shapes,1,,11,12,None,Arrow,,main flow,
-44,,Shapes,1,,12,13,None,Arrow,,main flow,
-45,,Shapes,1,,13,14,None,Arrow,,main flow,
-46,,Shapes,1,,14,15,None,Arrow,,main flow,
-47,,Shapes,1,,15,16,None,Arrow,,main flow,
-48,,Shapes,1,,16,18,None,Arrow,,main flow,
-49,,Shapes,1,,16,19,None,Arrow,,main flow,
-50,,Shapes,1,,16,20,None,Arrow,,main flow,
-51,,Shapes,1,,16,21,None,Arrow,,main flow,
-52,,Shapes,1,,18,22,None,Arrow,,main flow,
-53,,Shapes,1,,19,22,None,Arrow,,main flow,
-54,,Shapes,1,,18,23,None,Arrow,,main flow,
-55,,Shapes,1,,19,23,None,Arrow,,main flow,
-56,,Shapes,1,,20,24,None,Arrow,,main flow,
-57,,Shapes,1,,21,25,None,Arrow,,main flow,
-58,,Shapes,1,,18,26,None,Arrow,,main flow,
-59,,Shapes,1,,19,26,None,Arrow,,main flow,
-60,,Shapes,1,,20,26,None,Arrow,,main flow,
-61,,Shapes,1,,21,26,None,Arrow,,main flow,
-62,,Shapes,1,,22,27,None,Arrow,,main flow,
-63,,Shapes,1,,24,27,None,Arrow,,main flow,
-64,,Shapes,1,,25,27,None,Arrow,,main flow,
-65,,Shapes,1,,26,27,None,Arrow,,main flow,
-66,,Shapes,1,,27,28,None,Arrow,,main flow,
-67,,Shapes,1,,28,29,None,Arrow,,main flow,
-68,,Shapes,1,,28,30,None,Arrow,,feedback (dashed),
-69,,Shapes,1,,30,31,None,Arrow,,feedback (dashed),
-70,,Shapes,1,,31,14,None,Arrow,,feedback (dashed),
-71,,Shapes,1,,30,32,None,Arrow,,feedback (dashed),
+16,"Hallucination detector / (coverage %, unsupported claims)",Shapes,1,,,,,,"Hallucination detector / (coverage %, unsupported claims)",3. Shared spine,#E8E8E8
+17,Unsupported-claims / critic (blocks in CI),Shapes,1,,,,,,Unsupported-claims / critic (blocks in CI),3. Shared spine,#E8E8E8
+18,LLM router / Haiku: extract / classify / Sonnet: synthesis / explain,Shapes,1,,,,,,LLM router / Haiku: extract / classify / Sonnet: synthesis / explain,3. Shared spine,#E8E8E8
+19,CS1 — M&A Origination / public only · 12-24m / >$1bn equity,Shapes,1,,,,,,CS1 — M&A Origination / public only · 12-24m / >$1bn equity,4. Modules,#D6E9FF
+20,CS2 — Carve-Out Detection / public only · 6-18m / >$750m equity,Shapes,1,,,,,,CS2 — Carve-Out Detection / public only · 6-18m / >$750m equity,4. Modules,#D6E9FF
+21,CS3 — Post-Deal Value Tracker / client + public · 0-24m,Shapes,1,,,,,,CS3 — Post-Deal Value Tracker / client + public · 0-24m,4. Modules,#FFE3D6
+22,CS4 — Working-Capital Diagnostic / client + XBRL peers · 3-9m,Shapes,1,,,,,,CS4 — Working-Capital Diagnostic / client + XBRL peers · 3-9m,4. Modules,#FFE3D6
+23,Ranked situation queue / (score + confidence),Shapes,1,,,,,,Ranked situation queue / (score + confidence),5. Outputs,#E4F7E1
+24,Sector heatmap / (CS1 / CS2),Shapes,1,,,,,,Sector heatmap / (CS1 / CS2),5. Outputs,#E4F7E1
+25,KPI trend-band charts / (CS3: in / above / below band),Shapes,1,,,,,,KPI trend-band charts / (CS3: in / above / below band),5. Outputs,#E4F7E1
+26,Working-capital diagnostic / (DSO / DPO / DIO vs peers),Shapes,1,,,,,,Working-capital diagnostic / (DSO / DPO / DIO vs peers),5. Outputs,#E4F7E1
+27,Per-item explanation / + evidence panel + caveats,Shapes,1,,,,,,Per-item explanation / + evidence panel + caveats,5. Outputs,#E4F7E1
+28,Human review queue / (analyst triage),Shapes,1,,,,,,Human review queue / (analyst triage),6. Review,#FFF5BA
+29,Approve? / requires reviewer + / ts + reason,Shapes,1,,,,,,Approve? / requires reviewer + / ts + reason,6. Review,#FFF5BA
+30,Approved recommendation / (surfaced to business),Shapes,1,,,,,,Approved recommendation / (surfaced to business),6. Review,#E4F7E1
+31,Reviewer labels / (accept / edit / reject),Shapes,1,,,,,,Reviewer labels / (accept / edit / reject),7. Feedback,#F0D6FF
+32,Weight tuning / + calibration,Shapes,1,,,,,,Weight tuning / + calibration,7. Feedback,#F0D6FF
+33,Coverage + label dashboards / (/eval),Shapes,1,,,,,,Coverage + label dashboards / (/eval),7. Feedback,#F0D6FF
+34,,Shapes,1,,1,7,None,Arrow,,main flow,
+35,,Shapes,1,,2,7,None,Arrow,,main flow,
+36,,Shapes,1,,3,7,None,Arrow,,main flow,
+37,,Shapes,1,,4,7,None,Arrow,,main flow,
+38,,Shapes,1,,5,7,None,Arrow,,main flow,
+39,,Shapes,1,,6,7,None,Arrow,,main flow,
+40,,Shapes,1,,7,8,None,Arrow,,main flow,
+41,,Shapes,1,,8,9,None,Arrow,,main flow,
+42,,Shapes,1,,9,10,None,Arrow,,main flow,
+43,,Shapes,1,,10,11,None,Arrow,,main flow,
+44,,Shapes,1,,11,12,None,Arrow,,main flow,
+45,,Shapes,1,,12,13,None,Arrow,,main flow,
+46,,Shapes,1,,13,14,None,Arrow,,main flow,
+47,,Shapes,1,,14,15,None,Arrow,,main flow,
+48,,Shapes,1,,15,16,None,Arrow,,main flow,
+49,,Shapes,1,,16,17,None,Arrow,,main flow,
+50,,Shapes,1,,17,19,None,Arrow,,main flow,
+51,,Shapes,1,,17,20,None,Arrow,,main flow,
+52,,Shapes,1,,17,21,None,Arrow,,main flow,
+53,,Shapes,1,,17,22,None,Arrow,,main flow,
+54,,Shapes,1,,19,23,None,Arrow,,main flow,
+55,,Shapes,1,,20,23,None,Arrow,,main flow,
+56,,Shapes,1,,19,24,None,Arrow,,main flow,
+57,,Shapes,1,,20,24,None,Arrow,,main flow,
+58,,Shapes,1,,21,25,None,Arrow,,main flow,
+59,,Shapes,1,,22,26,None,Arrow,,main flow,
+60,,Shapes,1,,19,27,None,Arrow,,main flow,
+61,,Shapes,1,,20,27,None,Arrow,,main flow,
+62,,Shapes,1,,21,27,None,Arrow,,main flow,
+63,,Shapes,1,,22,27,None,Arrow,,main flow,
+64,,Shapes,1,,23,28,None,Arrow,,main flow,
+65,,Shapes,1,,25,28,None,Arrow,,main flow,
+66,,Shapes,1,,26,28,None,Arrow,,main flow,
+67,,Shapes,1,,27,28,None,Arrow,,main flow,
+68,,Shapes,1,,28,29,None,Arrow,,main flow,
+69,,Shapes,1,,29,30,None,Arrow,,main flow,
+70,,Shapes,1,,29,31,None,Arrow,,feedback (dashed),
+71,,Shapes,1,,31,32,None,Arrow,,feedback (dashed),
+72,,Shapes,1,,32,14,None,Arrow,,feedback (dashed),
+73,,Shapes,1,,31,33,None,Arrow,,feedback (dashed),

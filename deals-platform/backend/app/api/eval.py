@@ -29,8 +29,26 @@ def llm_summary(db: DbSession):
     cost = db.scalar(select(func.coalesce(func.sum(LLMCall.cost_usd), 0.0)))
     tokens_in = db.scalar(select(func.coalesce(func.sum(LLMCall.input_tokens), 0)))
     tokens_out = db.scalar(select(func.coalesce(func.sum(LLMCall.output_tokens), 0)))
-    return {"calls": total, "offline": offline, "cost_usd": float(cost),
-            "tokens_in": int(tokens_in), "tokens_out": int(tokens_out)}
+    avg_hallucination = db.scalar(
+        select(func.coalesce(func.avg(LLMCall.hallucination_score), 0.0))
+        .where(LLMCall.hallucination_score.isnot(None))
+    )
+    avg_coverage = db.scalar(
+        select(func.coalesce(func.avg(LLMCall.evidence_coverage_pct), 0.0))
+    )
+    total_unsupported = db.scalar(
+        select(func.coalesce(func.sum(LLMCall.unsupported_claim_count), 0))
+    )
+    return {
+        "calls": total,
+        "offline": offline,
+        "cost_usd": float(cost),
+        "tokens_in": int(tokens_in),
+        "tokens_out": int(tokens_out),
+        "hallucination_rate": float(avg_hallucination),
+        "evidence_coverage_pct": float(avg_coverage),
+        "unsupported_claims_total": int(total_unsupported),
+    }
 
 
 @router.get("/eval/coverage")

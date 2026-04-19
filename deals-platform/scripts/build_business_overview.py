@@ -65,6 +65,7 @@ NODES_SPINE = [
     ("sp_signals",  "Signal handlers\n(declarative, per domain)",      COL_SHARED, "box",    "solid"),
     ("sp_score",    "Weighted scoring\n(tunable per module)",          COL_SHARED, "box",    "solid"),
     ("sp_explain",  "Evidence-grounded\nexplanation layer",            COL_SHARED, "box",    "solid"),
+    ("sp_halluc",   "Hallucination detector\n(coverage %, unsupported claims)", COL_SHARED, "box", "solid"),
     ("sp_critic",   "Unsupported-claims\ncritic (blocks in CI)",       COL_SHARED, "box",    "solid"),
     ("sp_llm",      "LLM router\nHaiku: extract / classify\nSonnet: synthesis / explain", COL_SHARED, "note", "solid"),
 ]
@@ -114,7 +115,8 @@ EDGES_MAIN = [
     ("sp_evid",    "sp_signals"),
     ("sp_signals", "sp_score"),
     ("sp_score",   "sp_explain"),
-    ("sp_explain", "sp_critic"),
+    ("sp_explain", "sp_halluc"),
+    ("sp_halluc",  "sp_critic"),
     # Spine -> Modules (each module consumes the spine)
     ("sp_critic",  "m_cs1"),
     ("sp_critic",  "m_cs2"),
@@ -186,7 +188,7 @@ def build_dot() -> str:
 
     parts.append(_cluster("sources",  "1. Data sources (public vs client)", NODES_SOURCES, "#F7FBFF"))
     parts.append(_cluster("ingest",   "2. Ingestion pipeline",              NODES_INGEST,  "#FAFAFA"))
-    parts.append(_cluster("spine",    "3. Shared spine (models, evidence, scoring, explain, critic)", NODES_SPINE, "#FAFAFA"))
+    parts.append(_cluster("spine",    "3. Shared spine (models, evidence, scoring, explain, hallucination detection, critic)", NODES_SPINE, "#FAFAFA"))
     parts.append(_cluster("modules",  "4. Module logic (CS1 / CS2 public · CS3 / CS4 client)", NODES_MODULES, "#FAFAFA"))
     parts.append(_cluster("outputs",  "5. User-facing outputs",             NODES_OUTPUTS, "#F3FBF2"))
     parts.append(_cluster("review",   "6. Human-in-the-loop review",        NODES_REVIEW,  "#FFFBE6"))
@@ -236,6 +238,7 @@ def build_dot() -> str:
           <tr><td align="left">RAG &amp; chunking</td><td align="left">Ingestion (step 2)</td></tr>
           <tr><td align="left">LLM routing (Haiku / Sonnet)</td><td align="left">Shared spine (step 3)</td></tr>
           <tr><td align="left">Evidence grounding + citations</td><td align="left">Evidence store + explain layer</td></tr>
+          <tr><td align="left">Hallucination detection</td><td align="left">Shared spine, measures coverage % &amp; unsupported claims</td></tr>
           <tr><td align="left">Unsupported-claims critic</td><td align="left">Shared spine, blocks merge in CI</td></tr>
           <tr><td align="left">Weighted, tunable scoring</td><td align="left">Shared spine + feedback loop</td></tr>
           <tr><td align="left">HITL governance</td><td align="left">Review step (6)</td></tr>

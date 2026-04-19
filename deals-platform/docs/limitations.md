@@ -14,6 +14,10 @@
 
 ## Known limitations
 
+- **Hallucination detection**: Uses bag-of-words cosine similarity and heuristic
+  fact matching (no production NER/NLP). Production use should integrate with
+  more sophisticated semantic similarity (embeddings) and fact-checking APIs
+  (e.g., Vectara, Anthropic's long-context).
 - **Segment extraction coverage**: CS2 relies on XBRL segment data. Where
   an issuer doesn't publish it, the module drops to whole-company signals
   and sets `confidence ≤ 0.4`.
@@ -30,6 +34,13 @@
 
 ## Backlog
 
+- **Semantic similarity hallucination detection**: Replace bag-of-words with
+  embedding-based cosine similarity (e.g. `sentence-transformers`) for more
+  accurate coverage measurement.
+- **Fact-checking integration**: Connect to external fact APIs or RAG-based
+  claim verification for production-grade hallucination scoring.
+- **Hallucination feedback loop**: Wire reviewer feedback (e.g. "this claim
+  is unsupported") back to LLMCall metrics for continuous model improvement.
 - EU issuer coverage (ESMA filings)
 - GICS / sub-industry taxonomy (requires licence)
 - Integrate LEI via GLEIF and corporate-family graph via OpenCorporates

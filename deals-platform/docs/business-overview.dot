@@ -37,7 +37,7 @@ digraph BusinessOverview {
 (RAG index per source)", shape=box, style="filled,solid", fillcolor="#E8E8E8", penwidth=1, fontname="Helvetica", fontsize=11];
   }
   subgraph cluster_spine {
-    label=<<b>3. Shared spine (models, evidence, scoring, explain, critic)</b>>; labelloc=t; labeljust=l;
+    label=<<b>3. Shared spine (models, evidence, scoring, explain, hallucination detection, critic)</b>>; labelloc=t; labeljust=l;
     style="filled,rounded"; fillcolor="#FAFAFA"; color="#666666"; fontname="Helvetica"; fontsize=13;
     margin=14;
     sp_canon [label="Canonical entities
@@ -50,6 +50,8 @@ digraph BusinessOverview {
 (tunable per module)", shape=box, style="filled,solid", fillcolor="#E8E8E8", penwidth=1, fontname="Helvetica", fontsize=11];
     sp_explain [label="Evidence-grounded
 explanation layer", shape=box, style="filled,solid", fillcolor="#E8E8E8", penwidth=1, fontname="Helvetica", fontsize=11];
+    sp_halluc [label="Hallucination detector
+(coverage %, unsupported claims)", shape=box, style="filled,solid", fillcolor="#E8E8E8", penwidth=1, fontname="Helvetica", fontsize=11];
     sp_critic [label="Unsupported-claims
 critic (blocks in CI)", shape=box, style="filled,solid", fillcolor="#E8E8E8", penwidth=1, fontname="Helvetica", fontsize=11];
     sp_llm [label="LLM router
@@ -123,7 +125,8 @@ ts + reason", shape=diamond, style="filled,solid", fillcolor="#FFF5BA", penwidth
   sp_evid -> sp_signals [color="#333333"];
   sp_signals -> sp_score [color="#333333"];
   sp_score -> sp_explain [color="#333333"];
-  sp_explain -> sp_critic [color="#333333"];
+  sp_explain -> sp_halluc [color="#333333"];
+  sp_halluc -> sp_critic [color="#333333"];
   sp_critic -> m_cs1 [color="#333333"];
   sp_critic -> m_cs2 [color="#333333"];
   sp_critic -> m_cs3 [color="#333333"];
@@ -177,6 +180,7 @@ ts + reason", shape=diamond, style="filled,solid", fillcolor="#FFF5BA", penwidth
   <tr><td align="left">RAG &amp; chunking</td><td align="left">Ingestion (step 2)</td></tr>
   <tr><td align="left">LLM routing (Haiku / Sonnet)</td><td align="left">Shared spine (step 3)</td></tr>
   <tr><td align="left">Evidence grounding + citations</td><td align="left">Evidence store + explain layer</td></tr>
+  <tr><td align="left">Hallucination detection</td><td align="left">Shared spine, measures coverage % &amp; unsupported claims</td></tr>
   <tr><td align="left">Unsupported-claims critic</td><td align="left">Shared spine, blocks merge in CI</td></tr>
   <tr><td align="left">Weighted, tunable scoring</td><td align="left">Shared spine + feedback loop</td></tr>
   <tr><td align="left">HITL governance</td><td align="left">Review step (6)</td></tr>

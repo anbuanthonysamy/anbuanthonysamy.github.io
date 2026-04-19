@@ -17,7 +17,8 @@ flowchart LR
     EVT --> SIG[Signal Engine]
     SIG --> SCO[Scorer]
     SCO --> EXP[Explainer]
-    EXP --> CRT[Critic]
+    EXP --> HAL[Hallucination Detector]
+    HAL --> CRT[Critic]
     CRT --> Q[Review Queue]
   end
 
@@ -64,6 +65,10 @@ flowchart LR
 - No claim is surfaced to UI without at least one `Evidence` referenced
   by its `explanation.evidence_ids`. Enforced by
   `backend/app/explain/unsupported_claims.py` on every response.
+- Every explanation is measured for hallucination post-generation: sentence
+  coverage against evidence (cosine similarity + fact matching), unsupported
+  claim count logged in `LLMCall.hallucination_score` and
+  `LLMCall.evidence_coverage_pct`. Surfaced via `/eval/llm` dashboard.
 - CS1 and CS2 pipelines execute only against `public_*` sources. The
   segregation test (`backend/tests/test_segregation.py`) walks imports
   and fails CI on a cross-boundary import.
