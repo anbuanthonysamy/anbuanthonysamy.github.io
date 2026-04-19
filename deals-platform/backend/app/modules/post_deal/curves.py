@@ -21,7 +21,12 @@ class BandPoint:
     high: float
 
 
+def _aware(t: dt.datetime) -> dt.datetime:
+    return t if t.tzinfo else t.replace(tzinfo=dt.timezone.utc)
+
+
 def _frac(t: dt.datetime, t0: dt.datetime, t1: dt.datetime) -> float:
+    t, t0, t1 = _aware(t), _aware(t0), _aware(t1)
     span = (t1 - t0).total_seconds()
     if span <= 0:
         return 1.0
