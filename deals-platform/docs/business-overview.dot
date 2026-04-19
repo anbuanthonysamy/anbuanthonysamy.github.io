@@ -1,0 +1,206 @@
+digraph BusinessOverview {
+  rankdir=LR;
+  splines=ortho;
+  nodesep=0.35;
+  ranksep=0.9;
+  graph [fontname="Helvetica", bgcolor="white", pad="0.3", size="16.5,11.7!", ratio=fill];
+  node  [fontname="Helvetica"];
+  edge  [fontname="Helvetica", fontsize=10, color="#333333"];
+  subgraph cluster_sources {
+    label=<<b>1. Data sources (public vs client)</b>>; labelloc=t; labeljust=l;
+    style="filled,rounded"; fillcolor="#F7FBFF"; color="#666666"; fontname="Helvetica"; fontsize=13;
+    margin=14;
+    src_edgar [label="SEC EDGAR filings
+(10-K, 8-K, S-1)", shape=cylinder, style="filled,solid", fillcolor="#D6E9FF", penwidth=1, fontname="Helvetica", fontsize=11];
+    src_news [label="News feeds
+(RSS / press releases)", shape=cylinder, style="filled,solid", fillcolor="#D6E9FF", penwidth=1, fontname="Helvetica", fontsize=11];
+    src_market [label="Market data
+(prices, indices)", shape=cylinder, style="filled,dashed", fillcolor="#D6E9FF", penwidth=2, fontname="Helvetica", fontsize=11];
+    src_xbrl [label="XBRL peer benchmarks
+(public filings)", shape=cylinder, style="filled,solid", fillcolor="#D6E9FF", penwidth=1, fontname="Helvetica", fontsize=11];
+    src_upload [label="Client uploads
+(AR / AP / inventory / KPIs)", shape=cylinder, style="filled,solid", fillcolor="#FFE3D6", penwidth=1, fontname="Helvetica", fontsize=11];
+    src_kpi [label="Deal KPI plans
+(targets + curves)", shape=cylinder, style="filled,solid", fillcolor="#FFE3D6", penwidth=1, fontname="Helvetica", fontsize=11];
+  }
+  subgraph cluster_ingest {
+    label=<<b>2. Ingestion pipeline</b>>; labelloc=t; labeljust=l;
+    style="filled,rounded"; fillcolor="#FAFAFA"; color="#666666"; fontname="Helvetica"; fontsize=13;
+    margin=14;
+    ing_adapter [label="Source adapter
+(pluggable, rate-limited)", shape=box, style="filled,solid", fillcolor="#E8E8E8", penwidth=1, fontname="Helvetica", fontsize=11];
+    ing_fetch [label="Fetch + cache
+(retrieved_at stamped)", shape=box, style="filled,solid", fillcolor="#E8E8E8", penwidth=1, fontname="Helvetica", fontsize=11];
+    ing_parse [label="Parse + normalise
+(parsed_at stamped)", shape=box, style="filled,solid", fillcolor="#E8E8E8", penwidth=1, fontname="Helvetica", fontsize=11];
+    ing_chunk [label="Chunk + embed
+(RAG index per source)", shape=box, style="filled,solid", fillcolor="#E8E8E8", penwidth=1, fontname="Helvetica", fontsize=11];
+  }
+  subgraph cluster_spine {
+    label=<<b>3. Shared spine (models, evidence, scoring, explain, critic)</b>>; labelloc=t; labeljust=l;
+    style="filled,rounded"; fillcolor="#FAFAFA"; color="#666666"; fontname="Helvetica"; fontsize=13;
+    margin=14;
+    sp_canon [label="Canonical entities
+(Company, Deal, Person)", shape=box, style="filled,solid", fillcolor="#E8E8E8", penwidth=1, fontname="Helvetica", fontsize=11];
+    sp_evid [label="Evidence store
+(every claim is cite-able)", shape=box, style="filled,solid", fillcolor="#E8E8E8", penwidth=1, fontname="Helvetica", fontsize=11];
+    sp_signals [label="Signal handlers
+(declarative, per domain)", shape=box, style="filled,solid", fillcolor="#E8E8E8", penwidth=1, fontname="Helvetica", fontsize=11];
+    sp_score [label="Weighted scoring
+(tunable per module)", shape=box, style="filled,solid", fillcolor="#E8E8E8", penwidth=1, fontname="Helvetica", fontsize=11];
+    sp_explain [label="Evidence-grounded
+explanation layer", shape=box, style="filled,solid", fillcolor="#E8E8E8", penwidth=1, fontname="Helvetica", fontsize=11];
+    sp_critic [label="Unsupported-claims
+critic (blocks in CI)", shape=box, style="filled,solid", fillcolor="#E8E8E8", penwidth=1, fontname="Helvetica", fontsize=11];
+    sp_llm [label="LLM router
+Haiku: extract / classify
+Sonnet: synthesis / explain", shape=note, style="filled,solid", fillcolor="#E8E8E8", penwidth=1, fontname="Helvetica", fontsize=11];
+  }
+  subgraph cluster_modules {
+    label=<<b>4. Module logic (CS1 / CS2 public · CS3 / CS4 client)</b>>; labelloc=t; labeljust=l;
+    style="filled,rounded"; fillcolor="#FAFAFA"; color="#666666"; fontname="Helvetica"; fontsize=13;
+    margin=14;
+    m_cs1 [label="CS1 — M&A Origination
+public only · 12-24m
+>$1bn equity", shape=box3d, style="filled,solid", fillcolor="#D6E9FF", penwidth=1, fontname="Helvetica", fontsize=11];
+    m_cs2 [label="CS2 — Carve-Out Detection
+public only · 6-18m
+>$750m equity", shape=box3d, style="filled,solid", fillcolor="#D6E9FF", penwidth=1, fontname="Helvetica", fontsize=11];
+    m_cs3 [label="CS3 — Post-Deal Value Tracker
+client + public · 0-24m", shape=box3d, style="filled,solid", fillcolor="#FFE3D6", penwidth=1, fontname="Helvetica", fontsize=11];
+    m_cs4 [label="CS4 — Working-Capital Diagnostic
+client + XBRL peers · 3-9m", shape=box3d, style="filled,solid", fillcolor="#FFE3D6", penwidth=1, fontname="Helvetica", fontsize=11];
+  }
+  subgraph cluster_outputs {
+    label=<<b>5. User-facing outputs</b>>; labelloc=t; labeljust=l;
+    style="filled,rounded"; fillcolor="#F3FBF2"; color="#666666"; fontname="Helvetica"; fontsize=13;
+    margin=14;
+    out_queue [label="Ranked situation queue
+(score + confidence)", shape=folder, style="filled,solid", fillcolor="#E4F7E1", penwidth=1, fontname="Helvetica", fontsize=11];
+    out_heat [label="Sector heatmap
+(CS1 / CS2)", shape=folder, style="filled,solid", fillcolor="#E4F7E1", penwidth=1, fontname="Helvetica", fontsize=11];
+    out_kpi [label="KPI trend-band charts
+(CS3: in / above / below band)", shape=folder, style="filled,solid", fillcolor="#E4F7E1", penwidth=1, fontname="Helvetica", fontsize=11];
+    out_wc [label="Working-capital diagnostic
+(DSO / DPO / DIO vs peers)", shape=folder, style="filled,solid", fillcolor="#E4F7E1", penwidth=1, fontname="Helvetica", fontsize=11];
+    out_expl [label="Per-item explanation
++ evidence panel + caveats", shape=folder, style="filled,solid", fillcolor="#E4F7E1", penwidth=1, fontname="Helvetica", fontsize=11];
+  }
+  subgraph cluster_review {
+    label=<<b>6. Human-in-the-loop review</b>>; labelloc=t; labeljust=l;
+    style="filled,rounded"; fillcolor="#FFFBE6"; color="#666666"; fontname="Helvetica"; fontsize=13;
+    margin=14;
+    rv_queue [label="Human review queue
+(analyst triage)", shape=box, style="filled,solid", fillcolor="#FFF5BA", penwidth=1, fontname="Helvetica", fontsize=11];
+    rv_gate [label="Approve?
+requires reviewer +
+ts + reason", shape=diamond, style="filled,solid", fillcolor="#FFF5BA", penwidth=1, fontname="Helvetica", fontsize=11];
+    rv_out [label="Approved recommendation
+(surfaced to business)", shape=box, style="filled,solid", fillcolor="#E4F7E1", penwidth=1, fontname="Helvetica", fontsize=11];
+  }
+  subgraph cluster_feedback {
+    label=<<b>7. Feedback + learning loop</b>>; labelloc=t; labeljust=l;
+    style="filled,rounded"; fillcolor="#FBF3FF"; color="#666666"; fontname="Helvetica"; fontsize=13;
+    margin=14;
+    fb_labels [label="Reviewer labels
+(accept / edit / reject)", shape=box, style="filled,solid", fillcolor="#F0D6FF", penwidth=1, fontname="Helvetica", fontsize=11];
+    fb_tune [label="Weight tuning
++ calibration", shape=box, style="filled,solid", fillcolor="#F0D6FF", penwidth=1, fontname="Helvetica", fontsize=11];
+    fb_cover [label="Coverage + label dashboards
+(/eval)", shape=box, style="filled,solid", fillcolor="#F0D6FF", penwidth=1, fontname="Helvetica", fontsize=11];
+  }
+  src_edgar -> ing_adapter [color="#333333"];
+  src_news -> ing_adapter [color="#333333"];
+  src_market -> ing_adapter [color="#333333"];
+  src_xbrl -> ing_adapter [color="#333333"];
+  src_upload -> ing_adapter [color="#333333"];
+  src_kpi -> ing_adapter [color="#333333"];
+  ing_adapter -> ing_fetch [color="#333333"];
+  ing_fetch -> ing_parse [color="#333333"];
+  ing_parse -> ing_chunk [color="#333333"];
+  ing_chunk -> sp_canon [color="#333333"];
+  sp_canon -> sp_evid [color="#333333"];
+  sp_evid -> sp_signals [color="#333333"];
+  sp_signals -> sp_score [color="#333333"];
+  sp_score -> sp_explain [color="#333333"];
+  sp_explain -> sp_critic [color="#333333"];
+  sp_critic -> m_cs1 [color="#333333"];
+  sp_critic -> m_cs2 [color="#333333"];
+  sp_critic -> m_cs3 [color="#333333"];
+  sp_critic -> m_cs4 [color="#333333"];
+  m_cs1 -> out_queue [color="#333333"];
+  m_cs2 -> out_queue [color="#333333"];
+  m_cs1 -> out_heat [color="#333333"];
+  m_cs2 -> out_heat [color="#333333"];
+  m_cs3 -> out_kpi [color="#333333"];
+  m_cs4 -> out_wc [color="#333333"];
+  m_cs1 -> out_expl [color="#333333"];
+  m_cs2 -> out_expl [color="#333333"];
+  m_cs3 -> out_expl [color="#333333"];
+  m_cs4 -> out_expl [color="#333333"];
+  out_queue -> rv_queue [color="#333333"];
+  out_kpi -> rv_queue [color="#333333"];
+  out_wc -> rv_queue [color="#333333"];
+  out_expl -> rv_queue [color="#333333"];
+  rv_queue -> rv_gate [color="#333333"];
+  rv_gate -> rv_out [color="#333333"];
+  rv_gate -> fb_labels [color="#8E44AD", style=dashed, constraint=false, penwidth=1.4];
+  fb_labels -> fb_tune [color="#8E44AD", style=dashed, constraint=false, penwidth=1.4];
+  fb_tune -> sp_score [color="#8E44AD", style=dashed, constraint=false, penwidth=1.4];
+  fb_labels -> fb_cover [color="#8E44AD", style=dashed, constraint=false, penwidth=1.4];
+  legend [shape=plaintext, label=<<table border="0" cellborder="0" cellspacing="2">
+  <tr><td colspan="2" align="left"><b>Legend</b></td></tr>
+  <tr><td bgcolor="#D6E9FF" width="28">&#160;</td><td align="left">Public-data scope (CS1 / CS2)</td></tr>
+  <tr><td bgcolor="#FFE3D6">&#160;</td><td align="left">Client-data scope (CS3 / CS4)</td></tr>
+  <tr><td bgcolor="#E8E8E8">&#160;</td><td align="left">Shared spine / ingestion</td></tr>
+  <tr><td bgcolor="#E4F7E1">&#160;</td><td align="left">User-facing output</td></tr>
+  <tr><td bgcolor="#FFF5BA">&#160;</td><td align="left">Human-in-the-loop</td></tr>
+  <tr><td bgcolor="#F0D6FF">&#160;</td><td align="left">Feedback / learning</td></tr>
+  <tr><td>&#9671;</td><td align="left">Diamond = HITL gate</td></tr>
+  <tr><td>- - -</td><td align="left">Dashed border = mocked/fixture source (no live feed yet)</td></tr>
+  <tr><td>- - -</td><td align="left">Purple dashed arrow = feedback path</td></tr>
+</table>>
+];
+  out_of_scope [shape=plaintext, label=<<table border="1" cellborder="0" cellspacing="2" bgcolor="#FADBD8">
+  <tr><td align="left"><b>Explicitly OUT of scope for this PoC</b></td></tr>
+  <tr><td align="left">&#8226; SSO / enterprise identity</td></tr>
+  <tr><td align="left">&#8226; Production security hardening</td></tr>
+  <tr><td align="left">&#8226; Multi-tenancy / row-level isolation beyond scope tag</td></tr>
+  <tr><td align="left">&#8226; Mobile UI</td></tr>
+  <tr><td align="left">&#8226; Outbound automation (emails, CRM writes)</td></tr>
+  <tr><td align="left">&#8226; Paywall / ToS-restricted scraping</td></tr>
+  <tr><td align="left">&#8226; Real client data (synthetic fixtures only)</td></tr>
+</table>>
+];
+  ai_map [shape=plaintext, label=<<table border="1" cellborder="0" cellspacing="2" bgcolor="#FFFFFF">
+  <tr><td colspan="2" align="left"><b>AI / platform considerations &rarr; where they live</b></td></tr>
+  <tr><td align="left">RAG &amp; chunking</td><td align="left">Ingestion (step 2)</td></tr>
+  <tr><td align="left">LLM routing (Haiku / Sonnet)</td><td align="left">Shared spine (step 3)</td></tr>
+  <tr><td align="left">Evidence grounding + citations</td><td align="left">Evidence store + explain layer</td></tr>
+  <tr><td align="left">Unsupported-claims critic</td><td align="left">Shared spine, blocks merge in CI</td></tr>
+  <tr><td align="left">Weighted, tunable scoring</td><td align="left">Shared spine + feedback loop</td></tr>
+  <tr><td align="left">HITL governance</td><td align="left">Review step (6)</td></tr>
+  <tr><td align="left">Offline-default LLM client</td><td align="left">Tests + CI run deterministic</td></tr>
+  <tr><td align="left">Source adapters (pluggable)</td><td align="left">Ingestion (step 2)</td></tr>
+  <tr><td align="left">Data segregation (AST-checked)</td><td align="left">Module boundary (step 4)</td></tr>
+</table>>
+];
+  controls [shape=plaintext, label=<<table border="1" cellborder="0" cellspacing="2" bgcolor="#FFFFFF">
+  <tr><td align="left"><b>Quality controls shipped in the PoC</b></td></tr>
+  <tr><td align="left">&#8226; Every score cites &#8805; 1 Evidence row</td></tr>
+  <tr><td align="left">&#8226; Unsupported-claims check runs in CI</td></tr>
+  <tr><td align="left">&#8226; No approval without reviewer + ts + reason</td></tr>
+  <tr><td align="left">&#8226; Module imports enforced by AST test</td></tr>
+  <tr><td align="left">&#8226; Mocked sources flagged visibly in UI</td></tr>
+  <tr><td align="left">&#8226; Deterministic offline LLM in tests</td></tr>
+  <tr><td align="left">&#8226; Coverage + label dashboards at /eval</td></tr>
+</table>>
+];
+  { rank=sink; legend; out_of_scope; ai_map; controls; }
+  legend -> out_of_scope [style=invis];
+  out_of_scope -> ai_map [style=invis];
+  ai_map -> controls [style=invis];
+  labelloc="t";
+  label=<<b>Deals Platform PoC &#8212; Business-Team Overview</b><br/><font point-size="11">Four modules, one shared spine. Evidence-grounded, human-reviewed, offline-testable.</font>>;
+  fontsize=18;
+}
