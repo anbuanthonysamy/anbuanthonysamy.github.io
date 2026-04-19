@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+.venv/
+venv/
+
+# Node
+node_modules/
+.next/
+.turbo/
+*.log
+npm-debug.log*
+
+# Local state
+data/
+*.db
+*.sqlite
+*.sqlite3
+.env
+
+# Editor
+.vscode/
+.idea/
+.DS_Store
+
+# tsbuildinfo
+*.tsbuildinfo

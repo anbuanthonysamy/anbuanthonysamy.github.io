@@ -1,0 +1,54 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: deals
+      POSTGRES_PASSWORD: deals
+      POSTGRES_DB: deals
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U deals -d deals"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg2://deals:deals@postgres:5432/deals
+      SEC_USER_AGENT: "DealsPlatformPoC admin@example.com"
+      FIXTURES_DIR: /app/fixtures
+      UPLOAD_DIR: /app/data/uploads
+      CORS_ORIGINS: "http://localhost:3000,http://frontend:3000"
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      FRED_API_KEY: ${FRED_API_KEY:-}
+      COMPANIES_HOUSE_API_KEY: ${COMPANIES_HOUSE_API_KEY:-}
+    volumes:
+      - ./backend:/app
+      - ./fixtures:/app/fixtures:ro
+      - ./data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build: ./frontend
+    environment:
+      NEXT_PUBLIC_BACKEND_URL: http://localhost:8000
+      BACKEND_URL: http://backend:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:

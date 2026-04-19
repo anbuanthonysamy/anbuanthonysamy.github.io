@@ -1,0 +1,26 @@
+{
+  "note": "Public historical deals used to back-test CS1 (M&A) and CS2 (carve-outs). Reconstructed from publicly-known facts that were available 6-24 months before announcement.",
+  "deals": [
+    {"id": "d1",  "kind": "ma",        "target": "Activision Blizzard", "acquirer": "Microsoft",        "sector": "Technology",      "announced": "2022-01-18", "equity_value_usd": 68700000000, "signals": ["strategic_review_language","adjacent_deals","activist_13d"]},
+    {"id": "d2",  "kind": "ma",        "target": "Hess Corp",           "acquirer": "Chevron",          "sector": "Energy",          "announced": "2023-10-23", "equity_value_usd": 53000000000, "signals": ["adjacent_deals","mgmt_change"]},
+    {"id": "d3",  "kind": "ma",        "target": "Pioneer Natural Resources","acquirer":"ExxonMobil",   "sector": "Energy",          "announced": "2023-10-11", "equity_value_usd": 59500000000, "signals": ["adjacent_deals","strategic_review_language"]},
+    {"id": "d4",  "kind": "ma",        "target": "Splunk",              "acquirer": "Cisco",            "sector": "Technology",      "announced": "2023-09-21", "equity_value_usd": 28000000000, "signals": ["activist_13d","mgmt_change"]},
+    {"id": "d5",  "kind": "ma",        "target": "VMware",              "acquirer": "Broadcom",         "sector": "Technology",      "announced": "2022-05-26", "equity_value_usd": 61000000000, "signals": ["strategic_review_language","adjacent_deals"]},
+    {"id": "d6",  "kind": "ma",        "target": "Seagen",              "acquirer": "Pfizer",           "sector": "Healthcare",      "announced": "2023-03-13", "equity_value_usd": 43000000000, "signals": ["adjacent_deals","refi_window_12_24m"]},
+    {"id": "d7",  "kind": "ma",        "target": "Horizon Therapeutics","acquirer": "Amgen",            "sector": "Healthcare",      "announced": "2022-12-12", "equity_value_usd": 28000000000, "signals": ["adjacent_deals","mgmt_change"]},
+    {"id": "d8",  "kind": "ma",        "target": "Spirit Airlines",     "acquirer": "JetBlue",          "sector": "Industrials",     "announced": "2022-07-28", "equity_value_usd": 3800000000,  "signals": ["adjacent_deals"]},
+    {"id": "d9",  "kind": "ma",        "target": "Black Knight",        "acquirer": "ICE",              "sector": "FIG",             "announced": "2022-05-04", "equity_value_usd": 13100000000, "signals": ["strategic_review_language"]},
+    {"id": "d10", "kind": "ma",        "target": "Qualtrics",           "acquirer": "Silver Lake/CPPIB","sector": "Technology",      "announced": "2023-03-13", "equity_value_usd": 12500000000, "signals": ["strategic_review_language","activist_13d"]},
+
+    {"id": "cd1", "kind": "carveout",  "parent": "General Electric",    "segment": "GE HealthCare",     "sector": "Healthcare",      "announced": "2021-11-09", "equity_value_usd": 31000000000, "signals": ["segment_margin_drift","strategic_review_language_cs2","segment_reported"]},
+    {"id": "cd2", "kind": "carveout",  "parent": "Johnson & Johnson",   "segment": "Kenvue",            "sector": "Consumer Health", "announced": "2021-11-12", "equity_value_usd": 41000000000, "signals": ["strategic_review_language_cs2","segment_reported"]},
+    {"id": "cd3", "kind": "carveout",  "parent": "Kellogg's",           "segment": "Kellanova / WK Kellogg","sector": "Consumer",     "announced": "2022-06-21", "equity_value_usd": 12000000000, "signals": ["strategic_review_language_cs2","segment_margin_drift"]},
+    {"id": "cd4", "kind": "carveout",  "parent": "Vodafone",            "segment": "Vantage Towers",    "sector": "TMT",             "announced": "2023-03-03", "equity_value_usd": 16000000000, "signals": ["covenant_headroom","peer_divestment"]},
+    {"id": "cd5", "kind": "carveout",  "parent": "Unilever",            "segment": "Tea (ekaterra)",    "sector": "Consumer",        "announced": "2021-11-18", "equity_value_usd": 5100000000,  "signals": ["activist_breakup","segment_margin_drift"]},
+    {"id": "cd6", "kind": "carveout",  "parent": "GlaxoSmithKline",     "segment": "Haleon",            "sector": "Consumer Health", "announced": "2021-06-23", "equity_value_usd": 41000000000, "signals": ["strategic_review_language_cs2","segment_reported"]},
+    {"id": "cd7", "kind": "carveout",  "parent": "Siemens Energy",      "segment": "Siemens Limited India","sector": "Industrials", "announced": "2022-09-20", "equity_value_usd": 2500000000,  "signals": ["strategic_review_language_cs2","peer_divestment"]},
+    {"id": "cd8", "kind": "carveout",  "parent": "IBM",                 "segment": "Kyndryl",           "sector": "Technology",      "announced": "2020-10-08", "equity_value_usd": 8000000000,  "signals": ["segment_reported","strategic_review_language_cs2"]},
+    {"id": "cd9", "kind": "carveout",  "parent": "3M",                  "segment": "Solventum",         "sector": "Industrials",     "announced": "2022-07-26", "equity_value_usd": 15000000000, "signals": ["activist_breakup","segment_margin_drift"]},
+    {"id": "cd10","kind": "carveout",  "parent": "Continental",         "segment": "Vitesco",           "sector": "Industrials",     "announced": "2020-07-03", "equity_value_usd": 3100000000,  "signals": ["segment_margin_drift","segment_reported"]}
+  ]
+}

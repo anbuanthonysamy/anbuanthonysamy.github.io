@@ -1,0 +1,46 @@
+{
+  "entries": [
+    {
+      "title": "Activist investor Elliott builds 3% stake in Consumer Corp, pushes for break-up",
+      "link": "https://example.com/news/elliott-consumer-corp",
+      "summary": "Hedge fund Elliott Management is pressing Consumer Corp to spin off its European unit and explore strategic alternatives, according to a 13D filing.",
+      "published": "Mon, 08 Apr 2024 09:00:00 GMT"
+    },
+    {
+      "title": "Consumer Corp CEO announces strategic review of non-core assets",
+      "link": "https://example.com/news/consumer-review",
+      "summary": "On its Q1 call, Consumer Corp said it is undertaking a strategic review to explore options for its Agricultural Chemicals segment, which has underperformed for three years.",
+      "published": "Tue, 02 May 2024 14:30:00 GMT"
+    },
+    {
+      "title": "Industrial Inc faces refinancing wall as $4bn in debt matures in 2025",
+      "link": "https://example.com/news/industrial-refi",
+      "summary": "Industrial Inc's management acknowledged covenant headroom tightening on its earnings call and hinted at portfolio rationalisation.",
+      "published": "Thu, 06 Jun 2024 11:00:00 GMT"
+    },
+    {
+      "title": "Moody's places Industrial Inc on rating watch negative",
+      "link": "https://example.com/news/industrial-rating",
+      "summary": "Citing refinancing risk and segment underperformance, Moody's downgrade watch follows a peer divestment by rival Chemicals PLC.",
+      "published": "Mon, 17 Jun 2024 08:00:00 GMT"
+    },
+    {
+      "title": "Chemicals PLC divests specialty chemicals arm for $1.2bn",
+      "link": "https://example.com/news/chemicals-divest",
+      "summary": "Peer transaction sets valuation precedent for comparable carve-outs in the sector.",
+      "published": "Fri, 14 Jun 2024 16:00:00 GMT"
+    },
+    {
+      "title": "New CFO appointed at Tech Giant after strategic shake-up",
+      "link": "https://example.com/news/tech-cfo",
+      "summary": "The new chief financial officer signals a pivot toward capital discipline and potential divestments.",
+      "published": "Wed, 10 Jul 2024 10:00:00 GMT"
+    },
+    {
+      "title": "Retail Co CEO appointed to lead turnaround amid activist pressure",
+      "link": "https://example.com/news/retail-ceo",
+      "summary": "New CEO to explore strategic alternatives including store-portfolio rationalisation and possible sale.",
+      "published": "Mon, 22 Jul 2024 09:00:00 GMT"
+    }
+  ]
+}
