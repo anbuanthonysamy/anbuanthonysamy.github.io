@@ -28,9 +28,9 @@ function MetricCards({ items }: { items: SituationOut[] }) {
           );
         }
         const e = s.extras as Record<string, number | string>;
-        const value = e.value_days as number | undefined;
-        const benchmark = e.benchmark_days as number | undefined;
-        const mid = e.cash_opp_mid_usd as number | undefined;
+        const value = e.subject_days as number | undefined;
+        const benchmark = e.peer_p50 as number | undefined;
+        const mid = e.unlock_mid_usd as number | undefined;
         return (
           <div key={k} className="panel p-3">
             <div className="text-xs uppercase tracking-wide text-neutral-dark-tertiary">{k}</div>
