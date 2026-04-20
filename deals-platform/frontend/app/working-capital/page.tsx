@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { DataProvenance } from "@/components/DataProvenance";
 import { SituationCard } from "@/components/SituationCard";
 import { SituationDetail } from "@/components/SituationDetail";
 import type { SituationOut } from "@/lib/types";
@@ -96,6 +97,7 @@ export default function Page() {
         </button>
       </div>
       {err && <div className="panel p-3 text-sm text-data-red">{err}</div>}
+      <DataProvenance module="working_capital" items={items} />
       <MetricCards items={items} />
       <div className="panel p-3 text-xs text-neutral-dark-tertiary">
         To run a new diagnostic, POST multipart to <code>/working-capital/diagnose</code> with

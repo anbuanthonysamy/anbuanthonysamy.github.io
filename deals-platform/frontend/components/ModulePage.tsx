@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import type { SectorHeatCell, SituationOut } from "@/lib/types";
+import { DataProvenance } from "./DataProvenance";
 import { Heatmap } from "./Heatmap";
 import { SituationCard } from "./SituationCard";
 import { SituationDetail } from "./SituationDetail";
@@ -65,6 +66,7 @@ export function ModulePage({
         </button>
       </div>
       {err && <div className="panel p-3 text-sm text-data-red">{err}</div>}
+      <DataProvenance module={module} items={items} />
       {aboveList}
       {showHeatmap && (
         <div>

@@ -1,6 +1,7 @@
 import "./globals.css";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { TopBar } from "@/components/TopBar";
 
 export const metadata: Metadata = {
   title: "Deals Platform",
@@ -29,7 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <aside className="w-64 shrink-0 border-r border-neutral-dark-secondary bg-neutral-black">
             <div className="p-4 border-b border-neutral-dark-secondary">
               <div className="text-sm font-semibold text-neutral-white">Deals Platform</div>
-              <div className="text-xs text-neutral-dark-tertiary">PoC · offline mode</div>
+              <div className="text-xs text-neutral-dark-tertiary">PoC</div>
             </div>
             <nav className="p-2 text-sm space-y-0.5">
               {NAV.map((n) => (
@@ -56,7 +57,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               Every output is evidence-linked. No approvals without a reason.
             </div>
           </aside>
-          <main className="flex-1 min-w-0 bg-neutral-dark-bg">{children}</main>
+          <main className="flex-1 min-w-0 bg-neutral-dark-bg flex flex-col">
+            <TopBar />
+            <div className="flex-1 min-w-0">{children}</div>
+          </main>
         </div>
       </body>
     </html>

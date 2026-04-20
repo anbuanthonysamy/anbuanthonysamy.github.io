@@ -7,6 +7,13 @@ import { SituationDetail } from "@/components/SituationDetail";
 
 const STATES = ["pending", "accepted", "edited", "rejected", "approved"];
 const MODULES = ["", "origination", "carve_outs", "post_deal", "working_capital"];
+const MODULE_LABELS: Record<string, string> = {
+  origination: "CS1 · Origination",
+  carve_outs: "CS2 · Carve-Outs",
+  post_deal: "CS3 · Post-Deal",
+  working_capital: "CS4 · Working Capital",
+};
+const MODULE_ORDER = ["origination", "carve_outs", "post_deal", "working_capital"];
 
 export default function Page() {
   const [state, setState] = useState("pending");
@@ -95,14 +102,37 @@ export default function Page() {
               Nothing in queue for this filter.
             </div>
           )}
-          {items.map((s) => (
-            <SituationCard
-              key={s.id}
-              s={s}
-              active={selected?.id === s.id}
-              onSelect={setSelected}
-            />
-          ))}
+          {module === ""
+            ? MODULE_ORDER.map((m) => {
+                const group = items.filter((s) => s.module === m);
+                if (!group.length) return null;
+                return (
+                  <div key={m} className="space-y-2">
+                    <div className="sticky top-0 z-10 bg-neutral-dark-bg py-1 flex items-center gap-2 border-b border-neutral-dark-secondary">
+                      <span className="pill">{MODULE_LABELS[m] ?? m}</span>
+                      <span className="text-xs text-neutral-dark-tertiary">
+                        {group.length} item{group.length === 1 ? "" : "s"}
+                      </span>
+                    </div>
+                    {group.map((s) => (
+                      <SituationCard
+                        key={s.id}
+                        s={s}
+                        active={selected?.id === s.id}
+                        onSelect={setSelected}
+                      />
+                    ))}
+                  </div>
+                );
+              })
+            : items.map((s) => (
+                <SituationCard
+                  key={s.id}
+                  s={s}
+                  active={selected?.id === s.id}
+                  onSelect={setSelected}
+                />
+              ))}
         </div>
         <div className="lg:col-span-3">
           <SituationDetail s={selected} onChange={onUpdated} />

@@ -64,8 +64,23 @@ export function BandChart({
           ) : null,
         )}
       </svg>
-      <div className="text-xs text-neutral-dark-tertiary mt-1">
-        Plan with ±tolerance band; dots are actuals (green in band, red out of band).
+      <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-dark-tertiary mt-1">
+        <span className="inline-flex items-center gap-1">
+          <span className="inline-block w-3 h-2 rounded-sm" style={{ backgroundColor: "rgba(253,81,8,0.25)" }} />
+          tolerance band
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span className="inline-block w-4 h-[2px]" style={{ backgroundColor: "#FD5108" }} />
+          plan
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: "#059669" }} />
+          actual in band
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: "#E0301E" }} />
+          actual out of band
+        </span>
       </div>
     </div>
   );
