@@ -12,7 +12,7 @@ export function BandChart({
   unit?: string;
 }) {
   if (!points.length) {
-    return <div className="panel p-3 text-sm text-ink-muted">No data.</div>;
+    return <div className="panel p-3 text-sm text-neutral-dark-tertiary">No data.</div>;
   }
   const width = 420;
   const height = 180;
@@ -44,12 +44,12 @@ export function BandChart({
 
   return (
     <div className="panel p-3">
-      <div className="text-sm font-semibold mb-1">
-        {title} {unit && <span className="text-xs text-ink-muted">({unit})</span>}
+      <div className="text-sm font-semibold mb-1 text-neutral-white">
+        {title} {unit && <span className="text-xs text-neutral-dark-tertiary">({unit})</span>}
       </div>
       <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto">
-        <path d={bandPath} fill="rgba(99,102,241,0.12)" stroke="none" />
-        <path d={planPath} stroke="#6366f1" strokeWidth="1.5" fill="none" />
+        <path d={bandPath} fill="rgba(253,81,8,0.15)" stroke="none" />
+        <path d={planPath} stroke="#FD5108" strokeWidth="1.5" fill="none" />
         {points.map((p, i) =>
           p.actual !== null && p.actual !== undefined ? (
             <circle
@@ -58,13 +58,13 @@ export function BandChart({
               cy={Y(p.actual)}
               r={3}
               fill={
-                p.actual >= p.low && p.actual <= p.high ? "#059669" : "#dc2626"
+                p.actual >= p.low && p.actual <= p.high ? "#059669" : "#E0301E"
               }
             />
           ) : null,
         )}
       </svg>
-      <div className="text-xs text-ink-muted mt-1">
+      <div className="text-xs text-neutral-dark-tertiary mt-1">
         Plan with ±tolerance band; dots are actuals (green in band, red out of band).
       </div>
     </div>

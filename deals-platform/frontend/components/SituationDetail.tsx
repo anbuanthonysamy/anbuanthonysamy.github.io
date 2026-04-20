@@ -14,7 +14,7 @@ export function SituationDetail({
 }) {
   if (!s) {
     return (
-      <div className="panel p-6 text-sm text-ink-muted">
+      <div className="panel p-6 text-sm text-neutral-dark-tertiary">
         Select a situation to see its evidence, score breakdown, and review controls.
       </div>
     );
@@ -24,22 +24,22 @@ export function SituationDetail({
       <div className="panel p-4">
         <div className="flex items-start gap-3">
           <div className="flex-1 min-w-0">
-            <div className="text-xs text-ink-muted uppercase tracking-wide">
+            <div className="text-xs text-neutral-dark-tertiary uppercase tracking-wide">
               {s.module} · {s.kind}
             </div>
-            <div className="text-lg font-semibold mt-1">{s.title}</div>
-            <div className="text-sm text-ink-soft mt-1">{s.summary}</div>
+            <div className="text-lg font-semibold mt-1 text-neutral-white">{s.title}</div>
+            <div className="text-sm text-neutral-light-tertiary mt-1">{s.summary}</div>
           </div>
           <ScoreBadge score={s.score} confidence={s.confidence} />
         </div>
         {s.next_action && (
           <div className="mt-3 text-sm">
-            <span className="text-ink-muted">Next action: </span>
-            <span className="text-ink">{s.next_action}</span>
+            <span className="text-neutral-dark-tertiary">Next action: </span>
+            <span className="text-neutral-white">{s.next_action}</span>
           </div>
         )}
         {s.caveats.length > 0 && (
-          <ul className="mt-2 text-xs text-ink-muted list-disc list-inside">
+          <ul className="mt-2 text-xs text-neutral-dark-tertiary list-disc list-inside">
             {s.caveats.map((c, i) => (
               <li key={i}>{c}</li>
             ))}
@@ -47,20 +47,20 @@ export function SituationDetail({
         )}
       </div>
       <div className="panel p-4">
-        <div className="text-sm font-semibold mb-2">Score breakdown</div>
+        <div className="text-sm font-semibold mb-2 text-neutral-white">Score breakdown</div>
         <ScoreBreakdown dimensions={s.dimensions} weights={s.weights} />
       </div>
       <div className="panel p-4">
-        <div className="text-sm font-semibold mb-2">Explanation</div>
-        <div className="text-sm text-ink-soft whitespace-pre-wrap">{s.explanation}</div>
+        <div className="text-sm font-semibold mb-2 text-neutral-white">Explanation</div>
+        <div className="text-sm text-neutral-light-tertiary whitespace-pre-wrap">{s.explanation}</div>
         {s.explanation_cites.length > 0 && (
-          <div className="text-xs text-ink-muted mt-2">
+          <div className="text-xs text-neutral-dark-tertiary mt-2">
             Cites: {s.explanation_cites.map((c) => c.slice(0, 8)).join(", ")}
           </div>
         )}
       </div>
       <div>
-        <div className="text-sm font-semibold mb-2">Evidence ({s.evidence.length})</div>
+        <div className="text-sm font-semibold mb-2 text-neutral-white">Evidence ({s.evidence.length})</div>
         <EvidencePanel items={s.evidence} />
       </div>
       <ReviewControls situation={s} onChange={onChange} />

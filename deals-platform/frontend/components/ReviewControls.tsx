@@ -45,33 +45,33 @@ export function ReviewControls({
   return (
     <div className="panel p-3 space-y-2">
       <div className="flex items-center justify-between">
-        <div className="text-sm font-medium">Review</div>
+        <div className="text-sm font-medium text-neutral-white">Review</div>
         <span className="pill">state: {state}</span>
       </div>
       {situation.review.reviewer && (
-        <div className="text-xs text-ink-muted">
+        <div className="text-xs text-neutral-dark-tertiary">
           last: {situation.review.reviewer} — {situation.review.reason || "(no reason)"}
         </div>
       )}
       <textarea
-        className="w-full text-sm border border-hairline rounded p-2 bg-white"
+        className="w-full text-sm border border-neutral-dark-secondary rounded p-2 bg-neutral-dark-secondary text-neutral-white placeholder-neutral-dark-tertiary"
         rows={2}
         placeholder="Reason for this action (required)…"
         value={reason}
         onChange={(e) => setReason(e.target.value)}
       />
       <div className="flex items-center gap-2 text-xs">
-        <label className="text-ink-muted">Rating 1–10</label>
+        <label className="text-neutral-dark-tertiary">Rating 1–10</label>
         <input
           type="number"
           min={1}
           max={10}
-          className="w-14 border border-hairline rounded px-1 py-0.5"
+          className="w-14 border border-neutral-dark-secondary rounded px-1 py-0.5 bg-neutral-dark-secondary text-neutral-white"
           value={rating}
           onChange={(e) => setRating(e.target.value === "" ? "" : Number(e.target.value))}
         />
       </div>
-      {err && <div className="text-xs text-status-risk">{err}</div>}
+      {err && <div className="text-xs text-data-red">{err}</div>}
       <div className="flex gap-2 flex-wrap">
         <button className="btn" disabled={busy} onClick={() => submit("accept")}>
           Accept

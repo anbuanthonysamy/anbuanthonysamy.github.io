@@ -38,24 +38,24 @@ const MODULES = [
 export default function Page() {
   return (
     <div className="p-8 max-w-5xl">
-      <h1 className="text-2xl font-semibold text-ink">Deals Platform</h1>
-      <p className="text-sm text-ink-soft mt-1 max-w-2xl">
+      <h1 className="text-2xl font-semibold text-neutral-white">Deals Platform</h1>
+      <p className="text-sm text-neutral-light-tertiary mt-1 max-w-2xl">
         One product, four modules for professional-services M&A work. Each surfaces a
         ranked list of evidence-linked situations with human-in-the-loop review.
       </p>
       <div className="grid md:grid-cols-2 gap-3 mt-6">
         {MODULES.map((m) => (
-          <Link key={m.href} href={m.href} className="panel p-4 hover:bg-paper block">
+          <Link key={m.href} href={m.href} className="panel p-4 hover:bg-neutral-dark-secondary block">
             <div className="flex items-center gap-2">
               <span className="pill">{m.tag}</span>
-              <div className="text-lg font-semibold">{m.title}</div>
+              <div className="text-lg font-semibold text-neutral-white">{m.title}</div>
             </div>
-            <div className="text-sm text-ink-soft mt-2">{m.blurb}</div>
-            <div className="text-xs text-ink-muted mt-2">Data scope: {m.scope}</div>
+            <div className="text-sm text-neutral-light-tertiary mt-2">{m.blurb}</div>
+            <div className="text-xs text-neutral-dark-tertiary mt-2">Data scope: {m.scope}</div>
           </Link>
         ))}
       </div>
-      <div className="mt-8 text-sm text-ink-soft max-w-2xl">
+      <div className="mt-8 text-sm text-neutral-light-tertiary max-w-2xl">
         Shared spine: evidence store, scoring engine, explain layer, review queue.
         All data scopes are enforced at both import-time (segregation tests) and
         row-level (Evidence.scope).

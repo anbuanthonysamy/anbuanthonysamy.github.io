@@ -57,28 +57,28 @@ export function ModulePage({
     <div className="p-6 space-y-4">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-semibold">{title}</h1>
-          <p className="text-sm text-ink-soft mt-1 max-w-2xl">{subtitle}</p>
+          <h1 className="text-xl font-semibold text-neutral-white">{title}</h1>
+          <p className="text-sm text-neutral-light-tertiary mt-1 max-w-2xl">{subtitle}</p>
         </div>
         <button className="btn" onClick={load} disabled={loading}>
           {loading ? "Loading…" : "Refresh"}
         </button>
       </div>
-      {err && <div className="panel p-3 text-sm text-status-risk">{err}</div>}
+      {err && <div className="panel p-3 text-sm text-data-red">{err}</div>}
       {aboveList}
       {showHeatmap && (
         <div>
-          <div className="text-sm font-semibold mb-2">Sector heatmap</div>
+          <div className="text-sm font-semibold text-neutral-white mb-2">Sector heatmap</div>
           <Heatmap cells={heat} />
         </div>
       )}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         <div className="lg:col-span-2 space-y-2">
-          <div className="text-sm font-semibold">
+          <div className="text-sm font-semibold text-neutral-white">
             Ranked situations ({items.length})
           </div>
           {items.length === 0 && !loading && (
-            <div className="panel p-3 text-sm text-ink-muted">
+            <div className="panel p-3 text-sm text-neutral-dark-tertiary">
               No situations yet. Run <code>make demo</code> to seed the database.
             </div>
           )}

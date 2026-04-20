@@ -9,7 +9,7 @@ export function ScoreBreakdown({
     new Set([...Object.keys(dimensions), ...Object.keys(weights)]),
   ).sort();
   if (keys.length === 0) {
-    return <div className="text-sm text-ink-muted">No dimensions scored.</div>;
+    return <div className="text-sm text-neutral-dark-tertiary">No dimensions scored.</div>;
   }
   return (
     <table className="w-full">
@@ -31,9 +31,9 @@ export function ScoreBreakdown({
               <td className="td text-right">{w.toFixed(2)}</td>
               <td className="td text-right">{v.toFixed(2)}</td>
               <td className="td">
-                <div className="w-full h-1.5 bg-paper rounded">
+                <div className="w-full h-1.5 bg-neutral-dark-secondary rounded">
                   <div
-                    className="h-1.5 rounded bg-brand"
+                    className="h-1.5 rounded bg-brand-orange"
                     style={{ width: `${Math.min(100, Math.max(0, v * 100))}%` }}
                   />
                 </div>
