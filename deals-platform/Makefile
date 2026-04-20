@@ -32,12 +32,12 @@ logs:
 demo: up
 	@echo "Waiting for backend to become healthy…"
 	@until curl -fsS http://localhost:8000/health >/dev/null 2>&1; do sleep 1; done
-	$(BACKEND) python scripts/demo.py
+	$(BACKEND) sh -c "cd /app && python scripts/demo.py"
 	@echo "Open http://localhost:3000"
 
 seed: up
 	@until curl -fsS http://localhost:8000/health >/dev/null 2>&1; do sleep 1; done
-	$(BACKEND) python scripts/seed_demo.py
+	$(BACKEND) sh -c "cd /app && python scripts/seed_demo.py"
 
 test: test-backend
 
@@ -48,7 +48,7 @@ test-frontend: up
 	$(FRONTEND) npm run typecheck
 
 backtest: up
-	$(BACKEND) python scripts/backtest.py
+	$(BACKEND) sh -c "cd /app && python scripts/backtest.py"
 
 lint: up
 	$(BACKEND) ruff check app tests scripts
