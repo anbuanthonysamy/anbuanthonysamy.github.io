@@ -60,16 +60,24 @@ export function ReviewControls({
         value={reason}
         onChange={(e) => setReason(e.target.value)}
       />
-      <div className="flex items-center gap-2 text-xs">
-        <label className="text-neutral-dark-tertiary">Rating 1–10</label>
-        <input
-          type="number"
-          min={1}
-          max={10}
-          className="w-14 border border-neutral-dark-secondary rounded px-1 py-0.5 bg-neutral-dark-secondary text-neutral-white"
-          value={rating}
-          onChange={(e) => setRating(e.target.value === "" ? "" : Number(e.target.value))}
-        />
+      <div className="space-y-2">
+        <div>
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-medium text-neutral-dark-tertiary">Rating 1–10</label>
+            <span className="text-xs text-neutral-dark-tertiary">(1=useless, 10=ship to MD)</span>
+          </div>
+          <input
+            type="number"
+            min={1}
+            max={10}
+            className="w-20 border border-neutral-dark-secondary rounded px-2 py-1 bg-neutral-dark-secondary text-neutral-white mt-1"
+            value={rating}
+            onChange={(e) => setRating(e.target.value === "" ? "" : Number(e.target.value))}
+          />
+        </div>
+        <div className="text-xs text-neutral-dark-tertiary bg-neutral-dark-secondary px-2 py-1 rounded">
+          <strong>Workflow:</strong> Accept=confirmed, Reject=drop, Edit=modify, Approve=ready for client
+        </div>
       </div>
       {err && <div className="text-xs text-data-red">{err}</div>}
       <div className="flex gap-2 flex-wrap">

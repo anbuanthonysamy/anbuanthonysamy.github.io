@@ -12,9 +12,12 @@ export function EvidencePanel({ items }: { items: EvidenceOut[] }) {
   }
   return (
     <ul className="space-y-2">
-      {items.map((e) => (
+      {items.map((e, idx) => (
         <li key={e.id} className="panel p-3">
           <div className="flex items-center gap-2 mb-1">
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-brand-orange text-neutral-black text-xs font-bold">
+              {idx + 1}
+            </span>
             <ModePill mode={e.mode} />
             <ScopePill scope={e.scope} />
             <span className="text-xs text-neutral-dark-tertiary">{e.kind}</span>
@@ -39,7 +42,7 @@ export function EvidencePanel({ items }: { items: EvidenceOut[] }) {
               </a>
             )}
             {e.published_at && <span>published {relTime(e.published_at)}</span>}
-            <span className="ml-auto font-mono">{e.id.slice(0, 8)}</span>
+            <span className="ml-auto font-mono text-xs">{e.id.slice(0, 8)}</span>
           </div>
         </li>
       ))}

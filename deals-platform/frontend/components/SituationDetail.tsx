@@ -19,6 +19,17 @@ export function SituationDetail({
       </div>
     );
   }
+
+  const explanationWithCites = s.explanation
+    ? s.explanation.replace(
+        /[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/g,
+        (uuid) => {
+          const idx = s.evidence_ids.indexOf(uuid);
+          return idx >= 0 ? `[${idx + 1}]` : `[?]`;
+        }
+      )
+    : "";
+
   return (
     <div className="space-y-3">
       <div className="panel p-4">
@@ -33,9 +44,9 @@ export function SituationDetail({
           <ScoreBadge score={s.score} confidence={s.confidence} />
         </div>
         {s.next_action && (
-          <div className="mt-3 text-sm">
-            <span className="text-neutral-dark-tertiary">Next action: </span>
-            <span className="text-neutral-white">{s.next_action}</span>
+          <div className="mt-3 border-l-4 border-brand-orange bg-neutral-dark-secondary px-3 py-2 rounded-r">
+            <div className="text-xs font-semibold text-brand-orange uppercase tracking-wide">Next action</div>
+            <div className="text-sm text-neutral-white mt-1">{s.next_action}</div>
           </div>
         )}
         {s.caveats.length > 0 && (
@@ -52,7 +63,7 @@ export function SituationDetail({
       </div>
       <div className="panel p-4">
         <div className="text-sm font-semibold mb-2 text-neutral-white">Explanation</div>
-        <div className="text-sm text-neutral-light-tertiary whitespace-pre-wrap">{s.explanation}</div>
+        <div className="text-sm text-neutral-light-tertiary whitespace-pre-wrap">{explanationWithCites}</div>
         {s.explanation_cites.length > 0 && (
           <div className="text-xs text-neutral-dark-tertiary mt-2">
             Cites: {s.explanation_cites.map((c) => c.slice(0, 8)).join(", ")}
