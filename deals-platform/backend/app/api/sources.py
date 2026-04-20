@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException
 from sqlalchemy import select
 
 from app.api.deps import DbSession
-from app.models.orm import Source as SourceRow
+from app.models.orm import Company, Source as SourceRow
 from app.models.schemas import SourceHealthOut
 from app.shared.ingest import ingest
 from app.sources.registry import BY_ID as SOURCES
@@ -49,10 +49,40 @@ def refresh_source(source_id: str, db: DbSession, payload: dict | None = None):
     if src is None:
         raise HTTPException(404, "source not found")
     payload = payload or {}
-    try:
-        items = src.fetch(**payload)
-    except Exception as e:
-        raise HTTPException(400, f"fetch failed: {e}") from e
-    n = ingest(db, src, items)
+
+    n = 0
+    errors = []
+
+    if payload:
+        try:
+            items = src.fetch(**payload)
+            n = ingest(db, src, items)
+        except Exception as e:
+            raise HTTPException(400, f"fetch failed: {e}") from e
+    else:
+        companies = db.scalars(select(Company)).all()
+        for co in companies:
+            try:
+                if source_id.startswith("edgar"):
+                    items = src.fetch(cik=co.cik, company_name=co.name)
+                elif source_id == "news.google_rss":
+                    items = src.fetch(query=co.name)
+                elif source_id == "market.yfinance":
+                    items = src.fetch(ticker=co.ticker)
+                elif source_id == "macro.fred":
+                    items = src.fetch()
+                else:
+                    continue
+                n += ingest(db, src, items)
+            except Exception as e:
+                errors.append(f"{co.name}: {e}")
+
+        if errors:
+            raise HTTPException(400, f"partial fetch: {'; '.join(errors[:3])}")
+
     db.commit()
-    return {"source": source_id, "ingested": n, "ts": dt.datetime.now(dt.timezone.utc).isoformat()}
+    return {
+        "source": source_id,
+        "ingested": n,
+        "ts": dt.datetime.now(dt.timezone.utc).isoformat(),
+    }

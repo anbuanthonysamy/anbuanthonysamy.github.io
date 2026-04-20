@@ -37,35 +37,35 @@ export default function Page() {
   return (
     <div className="p-6 space-y-4">
       <div>
-        <h1 className="text-xl font-semibold">Evaluation</h1>
-        <p className="text-sm text-ink-soft mt-1 max-w-2xl">
+        <h1 className="text-xl font-semibold text-neutral-white">Evaluation</h1>
+        <p className="text-sm text-neutral-light-tertiary mt-1 max-w-2xl">
           Review volume, reviewer ratings, LLM cost, and per-module coverage across
           review states. Offline calls still count for latency tracking but cost $0.
         </p>
       </div>
-      {err && <div className="panel p-3 text-sm text-status-risk">{err}</div>}
+      {err && <div className="panel p-3 text-sm text-data-red">{err}</div>}
 
       <div className="grid md:grid-cols-3 gap-3">
         <div className="panel p-3">
-          <div className="text-xs uppercase tracking-wide text-ink-muted">Reviews</div>
+          <div className="text-xs uppercase tracking-wide text-neutral-dark-tertiary">Reviews</div>
           <div className="text-2xl font-semibold mt-1">
             {labels?.total_reviews ?? "—"}
           </div>
-          <div className="text-xs text-ink-muted">{labels?.rated ?? 0} rated 1–10</div>
+          <div className="text-xs text-neutral-dark-tertiary">{labels?.rated ?? 0} rated 1–10 (awaiting review)</div>
         </div>
         <div className="panel p-3">
-          <div className="text-xs uppercase tracking-wide text-ink-muted">LLM calls</div>
+          <div className="text-xs uppercase tracking-wide text-neutral-dark-tertiary">LLM calls</div>
           <div className="text-2xl font-semibold mt-1">{llm?.calls ?? "—"}</div>
-          <div className="text-xs text-ink-muted">
+          <div className="text-xs text-neutral-dark-tertiary">
             {llm?.offline ?? 0} offline · spend {money(llm?.cost_usd)}
           </div>
         </div>
         <div className="panel p-3">
-          <div className="text-xs uppercase tracking-wide text-ink-muted">Tokens</div>
+          <div className="text-xs uppercase tracking-wide text-neutral-dark-tertiary">Tokens</div>
           <div className="text-2xl font-semibold mt-1">
             {(llm?.tokens_in ?? 0) + (llm?.tokens_out ?? 0)}
           </div>
-          <div className="text-xs text-ink-muted">
+          <div className="text-xs text-neutral-dark-tertiary">
             in {llm?.tokens_in ?? 0} · out {llm?.tokens_out ?? 0}
           </div>
         </div>
@@ -86,7 +86,7 @@ export default function Page() {
           <tbody>
             {Object.keys(coverage).length === 0 ? (
               <tr>
-                <td className="td text-ink-muted" colSpan={states.length + 1}>
+                <td className="td text-neutral-dark-tertiary" colSpan={states.length + 1}>
                   No situations yet.
                 </td>
               </tr>
@@ -108,7 +108,7 @@ export default function Page() {
 
       {labels && (
         <div className="panel p-3 text-sm">
-          <div className="text-xs uppercase tracking-wide text-ink-muted mb-1">
+          <div className="text-xs uppercase tracking-wide text-neutral-dark-tertiary mb-1">
             Reviewer actions
           </div>
           <div className="flex gap-4 flex-wrap">
@@ -118,7 +118,7 @@ export default function Page() {
               </span>
             ))}
             {Object.keys(labels.by_action).length === 0 && (
-              <span className="text-ink-muted">No reviewer actions recorded.</span>
+              <span className="text-neutral-dark-tertiary">No reviewer actions recorded.</span>
             )}
           </div>
         </div>

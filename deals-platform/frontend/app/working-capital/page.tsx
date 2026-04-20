@@ -21,8 +21,8 @@ function MetricCards({ items }: { items: SituationOut[] }) {
         if (!s) {
           return (
             <div key={k} className="panel p-3">
-              <div className="text-xs uppercase tracking-wide text-ink-muted">{k}</div>
-              <div className="text-ink-muted text-sm mt-2">No diagnostic yet.</div>
+              <div className="text-xs uppercase tracking-wide text-neutral-dark-tertiary">{k}</div>
+              <div className="text-neutral-dark-tertiary text-sm mt-2">No diagnostic yet.</div>
             </div>
           );
         }
@@ -32,12 +32,12 @@ function MetricCards({ items }: { items: SituationOut[] }) {
         const mid = e.cash_opp_mid_usd as number | undefined;
         return (
           <div key={k} className="panel p-3">
-            <div className="text-xs uppercase tracking-wide text-ink-muted">{k}</div>
+            <div className="text-xs uppercase tracking-wide text-neutral-dark-tertiary">{k}</div>
             <div className="text-2xl font-semibold mt-1">
               {value !== undefined ? value.toFixed(1) : "—"}
-              <span className="text-xs text-ink-muted ml-1">days</span>
+              <span className="text-xs text-neutral-dark-tertiary ml-1">days</span>
             </div>
-            <div className="text-xs text-ink-muted">
+            <div className="text-xs text-neutral-dark-tertiary">
               peer median{" "}
               {benchmark !== undefined ? `${benchmark.toFixed(1)}d` : "—"}
             </div>
@@ -84,8 +84,8 @@ export default function Page() {
     <div className="p-6 space-y-4">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-semibold">CS4 — Working Capital Diagnostic</h1>
-          <p className="text-sm text-ink-soft mt-1 max-w-2xl">
+          <h1 className="text-xl font-semibold text-neutral-white">CS4 — Working Capital Diagnostic</h1>
+          <p className="text-sm text-neutral-light-tertiary mt-1 max-w-2xl">
             DSO / DPO / DIO from uploaded AR/AP/inventory vs XBRL peer benchmarks.
             Cash-opportunity bands computed from p60 / p50 / p40 peer quantiles.
             Horizon 3–9 months.
@@ -95,16 +95,16 @@ export default function Page() {
           {loading ? "Loading…" : "Refresh"}
         </button>
       </div>
-      {err && <div className="panel p-3 text-sm text-status-risk">{err}</div>}
+      {err && <div className="panel p-3 text-sm text-data-red">{err}</div>}
       <MetricCards items={items} />
-      <div className="panel p-3 text-xs text-ink-muted">
+      <div className="panel p-3 text-xs text-neutral-dark-tertiary">
         To run a new diagnostic, POST multipart to <code>/working-capital/diagnose</code> with
         AR, AP, and inventory files plus revenue + COGS. The demo seed produces a pre-computed
         diagnostic.
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         <div className="lg:col-span-2 space-y-2">
-          <div className="text-sm font-semibold">Diagnostics ({items.length})</div>
+          <div className="text-sm font-semibold text-neutral-white">Diagnostics ({items.length})</div>
           {items.map((s) => (
             <SituationCard
               key={s.id}

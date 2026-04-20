@@ -47,17 +47,17 @@ export default function Page() {
   return (
     <div className="p-6 space-y-4">
       <div>
-        <h1 className="text-xl font-semibold">Review queue</h1>
-        <p className="text-sm text-ink-soft mt-1 max-w-2xl">
+        <h1 className="text-xl font-semibold text-neutral-white">Review queue</h1>
+        <p className="text-sm text-neutral-light-tertiary mt-1 max-w-2xl">
           All situations across modules. Nothing is approved without a reviewer, a
           reason, and at least one evidence row.
         </p>
       </div>
 
       <div className="flex gap-3 items-center text-sm">
-        <label className="text-ink-muted">State</label>
+        <label className="text-neutral-dark-tertiary">State</label>
         <select
-          className="border border-hairline rounded px-2 py-1 bg-white"
+          className="border border-neutral-dark-secondary rounded px-2 py-1 bg-neutral-dark-secondary text-neutral-white"
           value={state}
           onChange={(e) => setState(e.target.value)}
         >
@@ -68,9 +68,9 @@ export default function Page() {
             </option>
           ))}
         </select>
-        <label className="text-ink-muted ml-3">Module</label>
+        <label className="text-neutral-dark-tertiary ml-3">Module</label>
         <select
-          className="border border-hairline rounded px-2 py-1 bg-white"
+          className="border border-neutral-dark-secondary rounded px-2 py-1 bg-neutral-dark-secondary text-neutral-white"
           value={module}
           onChange={(e) => setModule(e.target.value)}
         >
@@ -85,13 +85,13 @@ export default function Page() {
         </button>
       </div>
 
-      {err && <div className="panel p-3 text-sm text-status-risk">{err}</div>}
+      {err && <div className="panel p-3 text-sm text-data-red">{err}</div>}
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         <div className="lg:col-span-2 space-y-2">
-          <div className="text-sm font-semibold">Queue ({items.length})</div>
+          <div className="text-sm font-semibold text-neutral-white">Queue ({items.length})</div>
           {items.length === 0 && (
-            <div className="panel p-3 text-sm text-ink-muted">
+            <div className="panel p-3 text-sm text-neutral-dark-tertiary">
               Nothing in queue for this filter.
             </div>
           )}

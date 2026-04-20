@@ -41,11 +41,11 @@ function Bands() {
   };
 
   if (err) {
-    return <div className="panel p-3 text-sm text-status-risk">{err}</div>;
+    return <div className="panel p-3 text-sm text-data-red">{err}</div>;
   }
   if (!rows.length) {
     return (
-      <div className="panel p-3 text-sm text-ink-muted">
+      <div className="panel p-3 text-sm text-neutral-dark-tertiary">
         No KPIs yet. Upload a deal case JSON via <code>POST /post-deal/upload/deal-case</code>.
       </div>
     );
@@ -53,7 +53,7 @@ function Bands() {
   return (
     <div className="space-y-3">
       <div className="flex justify-between items-center">
-        <div className="text-sm font-semibold">KPI trend bands vs actuals</div>
+        <div className="text-sm font-semibold text-neutral-white">KPI trend bands vs actuals</div>
         <button className="btn" onClick={recompute} disabled={busy}>
           {busy ? "Computing…" : "Recompute deviations"}
         </button>
