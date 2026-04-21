@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 
 from app.models.enums import Geography, Module, Tier
 from app.models.orm import Company, Situation
-from app.sources.registry import get_source_registry
+from app.sources.registry import BY_ID as SOURCES_BY_ID
 from app.scanner.signals import (
     cs1_signal_scorer,
     cs2_signal_scorer,
@@ -33,7 +33,6 @@ class ContinuousScanner:
     def __init__(self, db_session: Session, api_mode: str = "live"):
         self.db = db_session
         self.api_mode = api_mode  # "live" or "offline"
-        self.registry = get_source_registry(api_mode=api_mode)
 
     async def scan_cs1_origination(
         self, geography: Geography = Geography.WORLDWIDE
@@ -50,7 +49,7 @@ class ContinuousScanner:
         for company in companies:
             try:
                 score, signals = await cs1_signal_scorer(
-                    company, self.registry, self.db
+                    company, self.api_mode, self.db
                 )
                 tier = self._tier_cs1(score, signals)
 
@@ -83,7 +82,7 @@ class ContinuousScanner:
         for company in companies:
             try:
                 score, signals = await cs2_signal_scorer(
-                    company, self.registry, self.db
+                    company, self.api_mode, self.db
                 )
                 tier = self._tier_cs2(score, signals)
 
