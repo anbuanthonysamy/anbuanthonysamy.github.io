@@ -207,6 +207,7 @@ class ContinuousScanner:
             existing.signals = signals
             existing.score_delta = score_delta
             existing.last_updated_at = now
+            situation = existing
         else:
             # Create: set first_seen_at
             situation = Situation(
@@ -220,10 +221,9 @@ class ContinuousScanner:
                 score_delta=0.0,
             )
             self.db.add(situation)
-            return situation
 
         self.db.commit()
-        return existing
+        return situation
 
 
 async def run_full_scan(
