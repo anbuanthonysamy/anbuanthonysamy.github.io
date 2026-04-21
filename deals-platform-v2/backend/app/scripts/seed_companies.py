@@ -10,13 +10,23 @@ from app.models.orm import Company
 
 def load_companies_from_fixture(fixture_path: str) -> list[dict]:
     """Load companies from JSON fixture file."""
-    path = Path(fixture_path)
-    if not path.exists():
-        # Try relative to backend directory
-        path = Path(__file__).parent.parent.parent / fixture_path
+    # Try multiple possible paths
+    possible_paths = [
+        Path(fixture_path),
+        Path(__file__).parent.parent.parent / fixture_path,
+        Path("/app") / fixture_path,
+        Path(__file__).parent.parent.parent.parent / fixture_path,
+    ]
 
-    with open(path) as f:
-        return json.load(f)
+    for path in possible_paths:
+        if path.exists():
+            with open(path) as f:
+                return json.load(f)
+
+    # If none found, raise error with all attempted paths
+    raise FileNotFoundError(
+        f"Could not find {fixture_path} in any of: {[str(p) for p in possible_paths]}"
+    )
 
 
 def seed_companies(universe: str = "seed", db: Session = None) -> int:
