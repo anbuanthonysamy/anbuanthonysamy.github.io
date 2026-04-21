@@ -28,6 +28,21 @@ from app.scanner.cs2_helpers import (
     calculate_separation_readiness,
     detect_capital_stress_actions,
 )
+from app.scanner.cs2_tier3_helpers import (
+    calculate_margin_trend_3y,
+    detect_activist_breakup_calls,
+    detect_peer_divestment_patterns,
+    calculate_separation_probability,
+    apply_multi_threshold_gating,
+)
+from app.scanner.tier4_helpers import (
+    detect_leadership_changes,
+    assess_ownership_structure,
+    calculate_transaction_probability_model,
+    calculate_deal_value_estimate,
+    score_deal_attractiveness,
+    refine_signal_scoring,
+)
 from app.sources.registry import BY_ID
 
 log = logging.getLogger(__name__)
@@ -86,9 +101,18 @@ async def cs1_signal_scorer(
         margin_compression = calculate_margin_compression(current_oi, current_revenue)
         signals["margin_compression_pct"] = margin_compression
 
-        # 4. Leadership changes (13D filings)
+        # 4. Leadership changes (13D filings + Tier 4: 8-K/news detection)
         leadership_change = len(filings) > 0
         signals["fresh_leadership_change"] = leadership_change
+
+        # Tier 4: Detect leadership changes from filings and news
+        leadership_change_score, leadership_changes = detect_leadership_changes(
+            filing_items=filings,
+            news_items=[],  # Would fetch from news source if available
+            days_lookback=180,
+        )
+        signals["leadership_change_score"] = leadership_change_score
+        signals["leadership_changes"] = len(leadership_changes)
 
         # 5. Activist involvement (using helper)
         activist_signal = 0.0
@@ -198,6 +222,62 @@ async def cs2_signal_scorer(
         capital_stress_score, capital_actions = detect_capital_stress_actions()
         signals["capital_stress_signals"] = capital_actions
         signals["capital_stress_score"] = capital_stress_score
+
+        # Tier 3: Advanced analysis
+        # Margin trend analysis (3-year trajectory)
+        margin_trend_score, margin_trend_dir = calculate_margin_trend_3y(
+            current_margin=current_revenue / max(current_oi, 1) * 100 if current_oi else 0
+        )
+        signals["margin_trend_score"] = margin_trend_score
+        signals["margin_trend_direction"] = margin_trend_dir
+
+        # Activist break-up call detection
+        breakup_signal, has_breakup_call = detect_activist_breakup_calls([])
+        signals["breakup_call_signal"] = breakup_signal
+        signals["has_breakup_activist_call"] = has_breakup_call
+
+        # Peer divestment pattern detection
+        peer_precedent, divested_divisions = detect_peer_divestment_patterns(
+            company_sector=company.sector or "",
+            company_name=company.name,
+            peer_divestment_news=[],
+        )
+        signals["peer_precedent_signal"] = peer_precedent
+        signals["similar_divestments"] = len(divested_divisions)
+
+        # Tier 3: Calculate separation probability
+        margin_stress = 1.0 - min(abs(margin_trend_score), 1.0)  # Normalize trend to stress signal
+        separation_prob = calculate_separation_probability(
+            separation_readiness=feasibility,
+            activist_signal=breakup_signal,
+            peer_precedent_signal=peer_precedent,
+            margin_stress_signal=margin_stress,
+            debt_stress_signal=debt_stress_score,
+        )
+        signals["separation_probability"] = separation_prob
+
+        # Tier 3: Multi-threshold gating
+        equity_value = company.market_cap_usd or 1e9  # Default $1B if unknown
+        should_flag, gate_reason = apply_multi_threshold_gating(
+            cs2_score=score,  # Will use composite score later
+            equity_value_usd=equity_value,
+            separation_readiness=feasibility,
+            separation_probability=separation_prob,
+        )
+        signals["passes_multi_threshold_gates"] = should_flag
+        signals["gating_reason"] = gate_reason
+
+        # Tier 4: Transaction probability and deal value
+        transaction_prob = calculate_transaction_probability_model(
+            cs1_score=0.0,  # Would get from CS1 scorer
+            cs2_score=score,
+            sector_m_and_a_activity=0.5,
+        )
+        signals["transaction_probability"] = transaction_prob
+
+        deal_value, premium = calculate_deal_value_estimate(equity_value)
+        signals["estimated_deal_value_usd"] = deal_value
+        signals["acquisition_premium_usd"] = premium
 
     except Exception as e:
         log.warning(f"Error fetching live signals for {company.ticker}: {e}")
@@ -349,44 +429,61 @@ def _get_sector_median_pe(sector: str) -> float:
 
 
 def _score_cs1_composite(signals: dict) -> float:
-    """Composite score for CS1 based on signals."""
-    # Normalized signals (0-1)
-    underperf = min(signals.get("market_underperformance_pct", 0) / 30, 1.0)
-    pe_disc = min(signals.get("pe_discount_pct", 0) / 40, 1.0)
-    margin = min(signals.get("margin_compression_pct", 0) / 30, 1.0)
-    leverage = min(signals.get("net_debt_ebitda", 0) / 5.0, 1.0)
-    leadership = 0.5 if signals.get("fresh_leadership_change", False) else 0
-    activist = 0.7 if signals.get("active_13d_filing", False) else 0
+    """Composite score for CS1 based on signals (Tiers 1-4)."""
+    # Normalize signals (0-1 scale)
+    underperf = min(max(signals.get("market_underperformance_pct", 0), 0) / 30, 1.0)
+    pe_disc = min(max(signals.get("pe_discount_pct", 0), 0) / 40, 1.0)
+    margin = min(max(signals.get("margin_compression_pct", 0), 0) / 30, 1.0)
+    leverage_ratio = signals.get("net_debt_ebitda", 0)
+    leverage = min(leverage_ratio / 5.0, 1.0) if leverage_ratio > 0 else 0
 
-    # Weighted composite
+    # Tier 2: Leadership + activist signals
+    leadership = signals.get("leadership_change_score", 0)
+    activist = signals.get("activist_signal_strength", 0.7) if signals.get("active_13d_filing", False) else 0
+
+    # Weighted composite (adjusted for Tier 4)
     score = (
-        underperf * 0.15
-        + pe_disc * 0.15
-        + margin * 0.15
-        + leverage * 0.20
-        + leadership * 0.15
-        + activist * 0.20
+        underperf * 0.14
+        + pe_disc * 0.14
+        + margin * 0.14
+        + leverage * 0.18
+        + leadership * 0.12
+        + activist * 0.28  # Activist = strongest signal
     )
 
     return min(score, 1.0)
 
 
 def _score_cs2_composite(signals: dict) -> float:
-    """Composite score for CS2 based on signals."""
-    # Normalized signals
-    debt_stress = 0.5 if signals.get("balance_sheet_stress", False) else 0
-    segment_perf = signals.get("segment_underperformance", 0)
-    discount = min(signals.get("conglomerate_discount_pct", 0) / 20, 1.0)
+    """Composite score for CS2 based on signals (Tiers 1-4)."""
+    # Tier 2: Core signals (normalized 0-1)
+    debt_stress_score = signals.get("balance_sheet_stress_score", 0.5 if signals.get("balance_sheet_stress", False) else 0)
+    segment_perf = min(signals.get("segment_underperformance", 0), 1.0)
+    discount = min(signals.get("conglomerate_discount_pct", 0) / 25, 1.0)
     separation = signals.get("separation_readiness", 0)
-    capital_stress = 0.4 if signals.get("capital_stress_signals", False) else 0
+    capital_stress = signals.get("capital_stress_score", 0.4 if signals.get("capital_stress_signals", False) else 0)
 
-    # Weighted composite
+    # Tier 3: Advanced signals
+    margin_trend = min(abs(signals.get("margin_trend_score", 0)), 1.0)  # Absolute value = stress magnitude
+    breakup_signal = signals.get("breakup_call_signal", 0)
+    peer_precedent = signals.get("peer_precedent_signal", 0)
+    separation_prob = signals.get("separation_probability", 0)
+
+    # Weighted composite: Tiers 1-2 baseline + Tier 3 enhancements
     score = (
-        debt_stress * 0.20
-        + segment_perf * 0.20
-        + discount * 0.20
-        + separation * 0.25
-        + capital_stress * 0.15
+        debt_stress_score * 0.16
+        + segment_perf * 0.16
+        + discount * 0.14
+        + separation * 0.18
+        + capital_stress * 0.12
+        + margin_trend * 0.08
+        + breakup_signal * 0.10
+        + peer_precedent * 0.06
     )
+
+    # Tier 3: Apply separation probability multiplier
+    # High probability boosts score, low probability dampens
+    probability_factor = 0.7 + (separation_prob * 0.3)  # Range: 0.7-1.0
+    score = score * probability_factor
 
     return min(score, 1.0)
