@@ -1,4 +1,4 @@
-"""Seed test companies into the database."""
+"""Seed companies into the database from fixtures."""
 import json
 from pathlib import Path
 
@@ -8,7 +8,7 @@ from app.db import SessionLocal
 from app.models.orm import Company
 
 
-def load_companies_from_fixture(fixture_path: str = "fixtures/companies.json") -> list[dict]:
+def load_companies_from_fixture(fixture_path: str) -> list[dict]:
     """Load companies from JSON fixture file."""
     path = Path(fixture_path)
     if not path.exists():
@@ -19,12 +19,24 @@ def load_companies_from_fixture(fixture_path: str = "fixtures/companies.json") -
         return json.load(f)
 
 
-def seed_companies(db: Session = None) -> int:
+def seed_companies(universe: str = "seed", db: Session = None) -> int:
     """
-    Seed test companies into database.
+    Seed companies into database from fixture.
 
-    Returns the number of companies added.
+    Args:
+        universe: "seed" (5 test companies) or "sp500_ftse100" (real market data)
+        db: Database session (creates one if None)
+
+    Returns:
+        Number of companies added.
     """
+    if universe == "seed":
+        fixture_path = "fixtures/companies.json"
+    elif universe == "sp500_ftse100":
+        fixture_path = "fixtures/sp500_ftse100.json"
+    else:
+        raise ValueError(f"Unknown universe: {universe}")
+
     if db is None:
         db = SessionLocal()
         should_close = True
@@ -32,7 +44,7 @@ def seed_companies(db: Session = None) -> int:
         should_close = False
 
     try:
-        companies_data = load_companies_from_fixture()
+        companies_data = load_companies_from_fixture(fixture_path)
         added = 0
 
         for company_data in companies_data:
@@ -56,6 +68,12 @@ def seed_companies(db: Session = None) -> int:
             db.close()
 
 
+def seed_sp500_ftse100(db: Session = None) -> int:
+    """Convenience function to seed S&P 500 + FTSE 100 companies."""
+    return seed_companies(universe="sp500_ftse100", db=db)
+
+
 if __name__ == "__main__":
-    count = seed_companies()
-    print(f"Seeded {count} companies into database")
+    # Default to S&P 500/FTSE 100 for live data
+    count = seed_sp500_ftse100()
+    print(f"Seeded {count} S&P 500 + FTSE 100 companies into database")
