@@ -18,6 +18,7 @@ from app.modules.post_deal.api import router as post_deal_router
 from app.modules.working_capital.api import router as working_capital_router
 from app.scanner.api import router as scanner_router
 from app.scanner.jobs import schedule_daily_scan
+from app.scripts.seed_companies import seed_companies
 from app.shared.scheduler import build_scheduler
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
@@ -41,6 +42,11 @@ app.add_middleware(
 def _startup() -> None:
     init_db()
     log.info("DB initialised")
+
+    # Seed test companies for development
+    count = seed_companies()
+    if count > 0:
+        log.info(f"Seeded {count} test companies")
 
     if settings.enable_scheduler:
         sched = build_scheduler()
