@@ -117,7 +117,7 @@ class ContinuousScanner:
         self, min_equity_value: int, geography: Geography = Geography.WORLDWIDE
     ) -> list[Company]:
         """Get companies matching criteria for scanning."""
-        stmt = select(Company).where(Company.equity_value >= min_equity_value)
+        stmt = select(Company).where(Company.market_cap_usd >= min_equity_value)
 
         if geography == Geography.UK_ONLY:
             stmt = stmt.where(Company.country == "GB")
