@@ -40,7 +40,7 @@ async def cs1_signal_scorer(
         market = BY_ID.get("market.yfinance")
         if market and company.ticker:
             market_items = await asyncio.to_thread(
-                market.fetch, ticker=company.ticker
+                market.fetch, ticker=company.ticker, sector=company.sector
             )
             market_meta = _extract_market_metrics(market_items)
         else:
