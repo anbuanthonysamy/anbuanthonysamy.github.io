@@ -210,9 +210,11 @@ class ContinuousScanner:
             situation = existing
         else:
             # Create: set first_seen_at
+            title = f"{company.name} — {module.value.replace('_', ' ').title()}"
             situation = Situation(
+                title=title,
                 company_id=company.id,
-                module=module,
+                module=module.value,
                 score=score,
                 tier=tier,
                 signals=signals,
