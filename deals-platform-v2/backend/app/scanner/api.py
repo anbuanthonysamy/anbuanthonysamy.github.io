@@ -6,12 +6,14 @@ from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, Query
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db import SessionLocal
 from app.models.enums import Geography, Module
-from app.models.orm import Situation
+from app.models.orm import Company, Situation
 from app.scanner.service import run_full_scan
+from app.scripts.seed_companies import seed_sp500_ftse100
 
 log = logging.getLogger(__name__)
 
@@ -173,6 +175,50 @@ async def generate_explanation_on_demand(
             "id": situation.id,
             "explanation": "On-demand explanation generation not yet implemented",
             "cached": False,
+        }
+    finally:
+        db.close()
+
+
+@router.get("/debug")
+def debug_status() -> dict:
+    """Debug endpoint: show system status and company count."""
+    db = SessionLocal()
+    try:
+        company_count = db.query(Company).count()
+        situation_count = db.query(Situation).count()
+
+        return {
+            "status": "ok",
+            "companies_in_db": company_count,
+            "situations_in_db": situation_count,
+            "message": f"Database has {company_count} companies and {situation_count} situations"
+        }
+    finally:
+        db.close()
+
+
+@router.post("/debug/load-companies")
+def debug_load_companies() -> dict:
+    """Debug endpoint: manually load S&P 500 + FTSE 100 companies."""
+    db = SessionLocal()
+    try:
+        log.info("Manually loading S&P 500 + FTSE 100 companies...")
+        count = seed_sp500_ftse100(db=db)
+
+        total_companies = db.query(Company).count()
+
+        return {
+            "status": "success",
+            "companies_loaded": count,
+            "total_companies_in_db": total_companies,
+            "message": f"Loaded {count} companies. Database now has {total_companies} total."
+        }
+    except Exception as e:
+        log.error(f"Failed to load companies: {e}")
+        return {
+            "status": "error",
+            "error": str(e)
         }
     finally:
         db.close()
