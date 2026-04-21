@@ -13,6 +13,21 @@ from typing import Any, Optional
 from sqlalchemy.orm import Session
 
 from app.models.orm import Company
+from app.scanner.cs1_helpers import (
+    calculate_pe_discount,
+    calculate_stock_underperformance,
+    calculate_margin_compression,
+    calculate_leverage_stress,
+    detect_valuation_gap,
+    score_activist_signal,
+)
+from app.scanner.cs2_helpers import (
+    calculate_segment_margin_drift,
+    calculate_balance_sheet_stress,
+    calculate_conglomerate_discount,
+    calculate_separation_readiness,
+    detect_capital_stress_actions,
+)
 from app.sources.registry import BY_ID
 
 log = logging.getLogger(__name__)
@@ -56,32 +71,46 @@ async def cs1_signal_scorer(
             filings = [item for item in filing_items if item.kind == "filing_13d"]
 
         # 1. Market & Valuation: stock underperformance vs peers
-        underperformance_pct = market_meta.get("underperformance_vs_sector", 0)
+        underperformance_pct = market_meta.get("underperformance_vs_sector", 0.0)
         signals["market_underperformance_pct"] = underperformance_pct
 
-        # 2. PE multiple discount vs sector median
-        pe_discount = _compute_pe_discount(facts_meta, market_meta)
+        # 2. PE multiple discount vs sector median (using helper)
+        company_pe = market_meta.get("pe_ratio", 0)
+        sector_pe = _get_sector_median_pe(company.sector or "")
+        pe_discount = calculate_pe_discount(company_pe, sector_pe)
         signals["pe_discount_pct"] = pe_discount
 
-        # 3. Strategic performance: margin compression
-        margin_compression = _compute_margin_compression(facts_meta)
+        # 3. Strategic performance: margin compression (using helper)
+        current_revenue = facts_meta.get("revenue", {}).get("val", 0)
+        current_oi = facts_meta.get("oi", {}).get("val", 0)
+        margin_compression = calculate_margin_compression(current_oi, current_revenue)
         signals["margin_compression_pct"] = margin_compression
 
-        # 4. Leadership changes (13D filings with <6 months)
+        # 4. Leadership changes (13D filings)
         leadership_change = len(filings) > 0
         signals["fresh_leadership_change"] = leadership_change
 
-        # 5. Activist involvement (13D with explicit intent to change board/strategy)
-        activist = any(
-            f.meta.get("form") == "SC 13D" and f.published_at and
-            (datetime.now(datetime.now().astimezone().tzinfo) - f.published_at).days < 180
-            for f in filings if f.meta
-        ) if filings else False
-        signals["active_13d_filing"] = activist
+        # 5. Activist involvement (using helper)
+        activist_signal = 0.0
+        if filings:
+            # Find most recent 13D filing
+            recent_13d = next((f for f in filings if f.meta and f.meta.get("form") == "SC 13D"), None)
+            if recent_13d and recent_13d.published_at:
+                days_since = (datetime.now(datetime.now().astimezone().tzinfo) - recent_13d.published_at).days
+                activist_signal = score_activist_signal(
+                    days_since_13d=days_since,
+                    filing_count_6m=len([f for f in filings if f.published_at and
+                                        (datetime.now(datetime.now().astimezone().tzinfo) - f.published_at).days < 180])
+                )
+        signals["active_13d_filing"] = activist_signal > 0.3
+        signals["activist_signal_strength"] = activist_signal
 
-        # 6. Leverage stress: Net Debt / EBITDA ratio
-        leverage = _compute_leverage_ratio(facts_meta)
+        # 6. Leverage stress: Net Debt / EBITDA ratio (using helper)
+        debt_val = facts_meta.get("debt", {}).get("val", 0)
+        oi_val = facts_meta.get("oi", {}).get("val", 0)
+        leverage, leverage_stressed = calculate_leverage_stress(debt_val, oi_val)
         signals["net_debt_ebitda"] = leverage
+        signals["leverage_stress"] = leverage_stressed
 
     except Exception as e:
         log.warning(f"Error fetching live signals for {company.ticker}: {e}")
@@ -128,25 +157,47 @@ async def cs2_signal_scorer(
         else:
             facts_meta = {}
 
-        # 1. Balance sheet stress: Net debt escalation
-        debt_stress = _compute_debt_stress(facts_meta)
-        signals["balance_sheet_stress"] = debt_stress
+        # 1. Balance sheet stress: Net debt escalation (using helper)
+        debt_val = facts_meta.get("debt", {}).get("val", 0)
+        oi_val = facts_meta.get("oi", {}).get("val", 0)
+        ebitda = oi_val * 1.2 if oi_val else 1.0
+        debt_stress_score, debt_stress_bool = calculate_balance_sheet_stress(debt_val, current_ebitda=ebitda)
+        signals["balance_sheet_stress"] = debt_stress_bool
+        signals["balance_sheet_stress_score"] = debt_stress_score
 
-        # 2. Segment underperformance
-        segment_perf = segment_meta.get("segment_underperformance", 0.3)
+        # 2. Segment underperformance (using helper)
+        segment_count = segment_meta.get("segment_count", 1)
+        segment_perf = 0.0
+        if segment_count > 1 and segment_meta.get("has_multiple_segments"):
+            # If we have segment data, compute actual margin gap
+            # For now, use estimated value from segment extraction
+            segment_perf = segment_meta.get("segment_underperformance", 0.25)
         signals["segment_underperformance"] = segment_perf
 
-        # 3. Portfolio complexity: Conglomerate discount (multi-segment with diverging margins)
-        discount = segment_meta.get("conglomerate_discount_pct", 12.0)
+        # 3. Portfolio complexity: Conglomerate discount (using helper)
+        revenue_concentration = 1.0 / max(segment_count, 1)  # 1 = single segment, <1 = diversified
+        discount = calculate_conglomerate_discount(
+            segment_count=segment_count,
+            revenue_concentration=revenue_concentration,
+            sector_diversity=max(1, segment_count - 1),
+        )
         signals["conglomerate_discount_pct"] = discount
 
-        # 4. Separation feasibility (based on segment size and independence)
-        feasibility = segment_meta.get("separation_readiness", 0.65)
+        # 4. Separation feasibility (using helper)
+        feasibility = calculate_separation_readiness(
+            years_of_segment_reporting=3,  # Assume minimum 3 years based on data availability
+            segment_has_independent_ops=segment_count > 1,
+            segment_revenue_pct=50.0 / max(segment_count, 1),  # Rough estimate
+            systems_independence_score=0.6 if segment_count > 1 else 0.3,
+            contract_assignability_score=0.7,
+            regulatory_barriers_score=0.8,
+        )
         signals["separation_readiness"] = feasibility
 
-        # 5. Capital actions: Dividend suspension, equity issuance (from recent filings)
-        capital_actions = _detect_capital_stress(facts_meta)
+        # 5. Capital actions: Dividend suspension, equity issuance (using helper)
+        capital_stress_score, capital_actions = detect_capital_stress_actions()
         signals["capital_stress_signals"] = capital_actions
+        signals["capital_stress_score"] = capital_stress_score
 
     except Exception as e:
         log.warning(f"Error fetching live signals for {company.ticker}: {e}")
@@ -274,72 +325,25 @@ def _extract_segment_metrics(items: list) -> dict:
     return metrics
 
 
-def _compute_pe_discount(facts_meta: dict, market_meta: dict) -> float:
-    """Compute P/E discount vs sector median."""
-    pe_ratio = market_meta.get("pe_ratio", 0)
-    if pe_ratio <= 0:
-        return 0.0
+def _get_sector_median_pe(sector: str) -> float:
+    """Get sector median P/E ratio.
 
-    # P/E discount is already computed in market fetcher
-    # This is the underperformance vs sector (positive = undervalued)
-    return market_meta.get("underperformance_vs_sector", 15.0)
-
-
-def _compute_margin_compression(facts_meta: dict) -> float:
-    """Compute operating margin compression vs historical."""
-    # Compare operating margin to prior year
-    revenue = facts_meta.get("revenue", {}).get("val", 0)
-    oi = facts_meta.get("oi", {}).get("val", 0)
-
-    if revenue and oi:
-        margin_pct = (oi / revenue) * 100
-        # Without historical data, assume 8% margin compression is signal
-        # In production, would compare to 3-year average
-        return 8.0 if margin_pct < 15 else 0.0
-
-    return 8.0  # Default to stub if data unavailable
-
-
-def _compute_leverage_ratio(facts_meta: dict) -> float:
-    """Compute Net Debt / EBITDA ratio.
-
-    Uses LongTermDebt as proxy for total debt (simplification).
-    Estimates EBITDA as Operating Income * 1.2x (D&A adjustment).
+    Used for comparing company P/E to sector benchmark.
     """
-    debt_val = facts_meta.get("debt", {}).get("val", 0)
-    oi_val = facts_meta.get("oi", {}).get("val", 0)
-
-    if not (debt_val and oi_val):
-        return 2.8  # Default moderate leverage if data unavailable
-
-    # Estimate EBITDA from operating income (simplified)
-    # EBITDA ≈ OI × 1.2 (accounting for ~20% D&A)
-    estimated_ebitda = oi_val * 1.2
-
-    if estimated_ebitda <= 0:
-        return 2.8
-
-    leverage = debt_val / estimated_ebitda
-    return max(0, leverage)  # Ensure non-negative
-
-
-def _detect_capital_stress(facts_meta: dict) -> bool:
-    """Detect capital stress signals (dividend cuts, equity issuance, etc.)."""
-    # Stub: False (no stress detected)
-    # Real implementation: parse recent 8-K/10-Q for capital actions
-    return False
-
-
-def _detect_debt_stress(facts_meta: dict) -> bool:
-    """Detect balance sheet stress (rising debt, covenant tightness, etc.)."""
-    # Stub: False
-    # Real implementation: compare debt trends over 3 years
-    return False
-
-
-def _compute_debt_stress(facts_meta: dict) -> bool:
-    """Wrapper for balance sheet stress detection."""
-    return _detect_debt_stress(facts_meta)
+    sector_pe_medians = {
+        "Information Technology": 25.0,
+        "Healthcare": 18.0,
+        "Financials": 12.0,
+        "Consumer Cyclical": 15.0,
+        "Consumer Defensive": 20.0,
+        "Energy": 10.0,
+        "Materials": 11.0,
+        "Communication Services": 22.0,
+        "Industrials": 14.0,
+        "Real Estate": 12.0,
+        "Utilities": 13.0,
+    }
+    return sector_pe_medians.get(sector, 15.0)
 
 
 
