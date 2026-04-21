@@ -91,7 +91,7 @@ async def cs2_signal_scorer(
 
 
 async def cs3_signal_scorer(
-    company: Company, registry: SourceRegistry, db: Session
+    company: Company, api_mode: str, db: Session
 ) -> tuple[float, dict]:
     """Score CS3 post-deal value creation signals."""
     # CS3 typically uses uploaded data; scanner returns minimal signals
@@ -100,7 +100,7 @@ async def cs3_signal_scorer(
 
 
 async def cs4_signal_scorer(
-    company: Company, registry: SourceRegistry, db: Session
+    company: Company, api_mode: str, db: Session
 ) -> tuple[float, dict]:
     """Score CS4 working capital signals."""
     # CS4 typically uses uploaded data; scanner returns minimal signals
