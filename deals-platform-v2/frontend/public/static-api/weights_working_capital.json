@@ -1,0 +1,1 @@
+{"module":"working_capital","weights":{"cash_unlock_potential":0.35,"ease_of_action":0.2,"operational_risk":0.15,"confidence":0.15,"implementation_priority":0.15},"defaults":{"cash_unlock_potential":0.35,"ease_of_action":0.2,"operational_risk":0.15,"confidence":0.15,"implementation_priority":0.15}}

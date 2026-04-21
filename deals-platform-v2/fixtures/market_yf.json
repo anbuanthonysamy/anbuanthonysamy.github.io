@@ -1,0 +1,8 @@
+{
+  "CONS": {"name": "Consumer Corp", "market_cap": 12500000000, "last_price": 78.42},
+  "INDL": {"name": "Industrial Inc", "market_cap": 8200000000, "last_price": 42.10},
+  "TECH": {"name": "Tech Giant", "market_cap": 210000000000, "last_price": 145.00},
+  "RETL": {"name": "Retail Co", "market_cap": 3400000000, "last_price": 22.80},
+  "CHEM": {"name": "Chemicals PLC", "market_cap": 6100000000, "last_price": 34.55},
+  "AAPL": {"name": "Apple Inc.", "market_cap": 3000000000000, "last_price": 195.00}
+}

@@ -1,0 +1,80 @@
+"use client";
+import type { SituationOut } from "@/lib/types";
+import { EvidencePanel } from "./EvidencePanel";
+import { ReviewControls } from "./ReviewControls";
+import { ScoreBadge } from "./ScoreBadge";
+import { ScoreBreakdown } from "./ScoreBreakdown";
+
+export function SituationDetail({
+  s,
+  onChange,
+}: {
+  s: SituationOut | null;
+  onChange?: (s: SituationOut) => void;
+}) {
+  if (!s) {
+    return (
+      <div className="panel p-6 text-sm text-neutral-dark-tertiary">
+        Select a situation to see its evidence, score breakdown, and review controls.
+      </div>
+    );
+  }
+
+  const explanationWithCites = s.explanation
+    ? s.explanation.replace(
+        /[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/g,
+        (uuid) => {
+          const idx = s.evidence_ids.indexOf(uuid);
+          return idx >= 0 ? `[${idx + 1}]` : `[?]`;
+        }
+      )
+    : "";
+
+  return (
+    <div className="space-y-3">
+      <div className="panel p-4">
+        <div className="flex items-start gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="text-xs text-neutral-dark-tertiary uppercase tracking-wide">
+              {s.module} · {s.kind}
+            </div>
+            <div className="text-lg font-semibold mt-1 text-neutral-white">{s.title}</div>
+            <div className="text-sm text-neutral-light-tertiary mt-1">{s.summary}</div>
+          </div>
+          <ScoreBadge score={s.score} confidence={s.confidence} />
+        </div>
+        {s.next_action && (
+          <div className="mt-3 border-l-4 border-brand-orange bg-neutral-dark-secondary px-3 py-2 rounded-r">
+            <div className="text-xs font-semibold text-brand-orange uppercase tracking-wide">Next action</div>
+            <div className="text-sm text-neutral-white mt-1">{s.next_action}</div>
+          </div>
+        )}
+        {s.caveats.length > 0 && (
+          <ul className="mt-2 text-xs text-neutral-dark-tertiary list-disc list-inside">
+            {s.caveats.map((c, i) => (
+              <li key={i}>{c}</li>
+            ))}
+          </ul>
+        )}
+      </div>
+      <div className="panel p-4">
+        <div className="text-sm font-semibold mb-2 text-neutral-white">Score breakdown</div>
+        <ScoreBreakdown dimensions={s.dimensions} weights={s.weights} />
+      </div>
+      <div className="panel p-4">
+        <div className="text-sm font-semibold mb-2 text-neutral-white">Explanation</div>
+        <div className="text-sm text-neutral-light-tertiary whitespace-pre-wrap">{explanationWithCites}</div>
+        {s.explanation_cites.length > 0 && (
+          <div className="text-xs text-neutral-dark-tertiary mt-2">
+            Cites: {s.explanation_cites.map((c) => c.slice(0, 8)).join(", ")}
+          </div>
+        )}
+      </div>
+      <div>
+        <div className="text-sm font-semibold mb-2 text-neutral-white">Evidence ({s.evidence.length})</div>
+        <EvidencePanel items={s.evidence} />
+      </div>
+      <ReviewControls situation={s} onChange={onChange} />
+    </div>
+  );
+}

@@ -1,0 +1,1 @@
+{"module":"post_deal","weights":{"value_at_risk":0.3,"urgency":0.2,"business_impact":0.2,"confidence":0.15,"intervention_priority":0.15},"defaults":{"value_at_risk":0.3,"urgency":0.2,"business_impact":0.2,"confidence":0.15,"intervention_priority":0.15}}
