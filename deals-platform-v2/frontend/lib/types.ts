@@ -76,3 +76,29 @@ export interface WeightsResponse {
 export interface CoverageResponse {
   [module: string]: Record<string, number>;
 }
+
+export interface CompanyOut {
+  id: string;
+  ticker: string | null;
+  name: string;
+  sector: string | null;
+  country: string | null;
+  market_cap_usd: number | null;
+  equity_value: number;
+}
+
+export interface SituationV2 {
+  id: string;
+  module: string;
+  company_id: string | null;
+  company?: CompanyOut;
+  tier: string | null;
+  tier_colour: "red" | "amber" | "green";
+  score: number;
+  score_delta: number;
+  signals: Record<string, unknown>;
+  first_seen_at: string | null;
+  last_updated_at: string | null;
+  explanation: string | null;
+  caveats: string[];
+}

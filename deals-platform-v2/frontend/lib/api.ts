@@ -2,6 +2,7 @@ import type {
   CoverageResponse,
   SectorHeatCell,
   SituationOut,
+  SituationV2,
   SourceHealthOut,
   WeightsResponse,
 } from "./types";
@@ -173,6 +174,58 @@ export const api = {
   health: async () => {
     if (!isStatic) return liveReq<{ ok: boolean; live_llm: boolean; offline: boolean }>("/health");
     return staticReq<{ ok: boolean; live_llm: boolean; offline: boolean }>("health");
+  },
+  triggerScan: async (apiMode: "live" | "offline", geography: "worldwide" | "uk_only") => {
+    if (!isStatic) {
+      return liveReq<{
+        status: string;
+        timestamp: string;
+        geography: string;
+        counts: Record<string, number>;
+        total: number;
+      }>(`/api/v2/scan/run?api_mode=${apiMode}&geography=${geography}`, { method: "POST" });
+    }
+    throw staticReadOnlyError("triggerScan");
+  },
+  situationsV2: async (params: {
+    module?: string;
+    tier?: string;
+    new_since?: string;
+    sort_by?: string;
+    limit?: number;
+    offset?: number;
+  } = {}) => {
+    if (!isStatic) {
+      const q = new URLSearchParams();
+      if (params.module) q.set("module", params.module);
+      if (params.tier) q.set("tier", params.tier);
+      if (params.new_since) q.set("new_since", params.new_since);
+      if (params.sort_by) q.set("sort_by", params.sort_by || "priority");
+      if (params.limit) q.set("limit", String(params.limit || 50));
+      if (params.offset) q.set("offset", String(params.offset || 0));
+      return liveReq<{
+        total: number;
+        limit: number;
+        offset: number;
+        situations: SituationV2[];
+      }>(`/api/v2/scan/situations${q.toString() ? `?${q}` : ""}`);
+    }
+    throw staticReadOnlyError("situationsV2");
+  },
+  situationV2: async (id: string) => {
+    if (!isStatic) {
+      return liveReq<SituationV2>(`/api/v2/scan/situations/${id}`);
+    }
+    throw staticReadOnlyError("situationV2");
+  },
+  generateExplanation: async (id: string) => {
+    if (!isStatic) {
+      return liveReq<{ id: string; explanation: string; cached: boolean }>(
+        `/api/v2/scan/situations/${id}/explain`,
+        { method: "POST" },
+      );
+    }
+    throw staticReadOnlyError("generateExplanation");
   },
 };
 
