@@ -68,7 +68,7 @@ def list_situations(
     """List situations with filters and sorting."""
     db = SessionLocal()
     try:
-        query = db.query(Situation)
+        query = db.query(Situation).outerjoin(Company, Situation.company_id == Company.id)
 
         # Filters
         if module:
@@ -86,8 +86,7 @@ def list_situations(
         if sort_by == "priority":
             query = query.order_by(Situation.tier).order_by(Situation.score.desc())
         elif sort_by == "value":
-            # Would require join to company; for now sort by score proxy
-            query = query.order_by(Situation.score.desc())
+            query = query.order_by(Company.market_cap_usd.desc().nullslast())
         elif sort_by == "score":
             query = query.order_by(Situation.score.desc())
         elif sort_by == "recency":
@@ -97,6 +96,10 @@ def list_situations(
 
         total = query.count()
         situations = query.limit(limit).offset(offset).all()
+
+        # Build company lookup for efficient access
+        company_ids = {s.company_id for s in situations if s.company_id}
+        companies = {c.id: c for c in db.query(Company).filter(Company.id.in_(company_ids)).all()} if company_ids else {}
 
         return {
             "total": total,
@@ -113,6 +116,8 @@ def list_situations(
                     "first_seen_at": s.first_seen_at.isoformat() if s.first_seen_at else None,
                     "last_updated_at": s.last_updated_at.isoformat() if s.last_updated_at else None,
                     "company_id": s.company_id,
+                    "company_name": companies.get(s.company_id, {}).name if s.company_id and s.company_id in companies else "Unknown",
+                    "company_sector": companies.get(s.company_id, {}).sector if s.company_id and s.company_id in companies else None,
                     "signals": s.signals,
                 }
                 for s in situations
