@@ -118,6 +118,8 @@ def list_situations(
                     "company_id": s.company_id,
                     "company_name": companies.get(s.company_id, {}).name if s.company_id and s.company_id in companies else "Unknown",
                     "company_sector": companies.get(s.company_id, {}).sector if s.company_id and s.company_id in companies else None,
+                    "company_country": companies.get(s.company_id, {}).country if s.company_id and s.company_id in companies else None,
+                    "company_source": "Companies House" if (companies.get(s.company_id, {}).country == "UK" if s.company_id and s.company_id in companies else False) else "S&P 500",
                     "signals": s.signals,
                 }
                 for s in situations
@@ -138,10 +140,16 @@ def get_situation(
         if not situation:
             return {"error": "Situation not found"}
 
+        company = db.query(Company).filter(Company.id == situation.company_id).first() if situation.company_id else None
+
         return {
             "id": situation.id,
             "module": situation.module,
             "company_id": situation.company_id,
+            "company_name": company.name if company else "Unknown",
+            "company_sector": company.sector if company else None,
+            "company_country": company.country if company else None,
+            "company_source": "Companies House" if (company and company.country == "UK") else "S&P 500",
             "tier": situation.tier,
             "tier_colour": situation.tier_colour,
             "score": situation.score,
