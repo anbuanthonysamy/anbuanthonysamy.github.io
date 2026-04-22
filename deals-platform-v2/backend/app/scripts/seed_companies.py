@@ -1,11 +1,15 @@
 """Seed companies into the database from fixtures."""
 import json
+import logging
 from pathlib import Path
 
 from sqlalchemy.orm import Session
 
 from app.db import SessionLocal
 from app.models.orm import Company
+from app.sources.companies_house import search_company_number
+
+log = logging.getLogger(__name__)
 
 
 def load_companies_from_fixture(fixture_path: str) -> list[dict]:
@@ -77,6 +81,27 @@ def seed_companies(universe: str = "seed", db: Session = None) -> int:
                 added += 1
 
         db.commit()
+
+        # Auto-resolve Companies House numbers for UK companies that don't
+        # have one yet. Fixtures carry only the name; the number is looked up
+        # via the CH Search API (requires COMPANIES_HOUSE_API_KEY) and cached
+        # onto the Company row so subsequent scans skip the lookup.
+        resolved = 0
+        uk_missing = db.query(Company).filter(
+            Company.country == "UK", Company.company_number.is_(None)
+        ).all()
+        for company in uk_missing:
+            number = search_company_number(company.name)
+            if number:
+                company.company_number = number
+                resolved += 1
+                log.info("Resolved Companies House number for %s: %s",
+                         company.name, number)
+            else:
+                log.warning("No Companies House match for %s", company.name)
+        if resolved:
+            db.commit()
+
         return added
     finally:
         if should_close:

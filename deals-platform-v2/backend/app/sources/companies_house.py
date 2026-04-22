@@ -15,6 +15,41 @@ from app.sources.base import RawItem, Source
 log = logging.getLogger(__name__)
 
 
+def search_company_number(name: str) -> str | None:
+    """Resolve a company name to a UK Companies House company number.
+
+    Uses the authenticated /search/companies endpoint. Returns the top match's
+    company_number, or None if no match is found or the API key is missing.
+
+    Picks the first ``active`` PLC result when available; otherwise the first
+    result returned by the search.
+    """
+    s = get_settings()
+    if not s.companies_house_api_key:
+        return None
+    url = "https://api.company-information.service.gov.uk/search/companies"
+    try:
+        with httpx.Client(timeout=10, auth=(s.companies_house_api_key, "")) as cli:
+            r = cli.get(url, params={"q": name, "items_per_page": 10})
+            r.raise_for_status()
+            data = r.json()
+    except Exception as e:
+        log.warning("companies house search failed for %r: %s", name, e)
+        return None
+
+    items = data.get("items", []) or []
+    if not items:
+        return None
+
+    # Prefer an active PLC match, falling back to first result.
+    for item in items:
+        title = (item.get("title") or "").upper()
+        status = (item.get("company_status") or "").lower()
+        if "PLC" in title and status == "active":
+            return item.get("company_number")
+    return items[0].get("company_number")
+
+
 class CompaniesHouse(Source):
     id = "reg.companies_house"
     name = "UK Companies House"
