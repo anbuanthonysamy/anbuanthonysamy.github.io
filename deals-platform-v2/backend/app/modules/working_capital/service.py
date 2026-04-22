@@ -203,12 +203,15 @@ def diagnose(
         }
         bundle = compose(dims, weights, dims["confidence"])
 
-        explanation, cites = generate_explanation(
-            db,
-            title=f"Working capital opportunity: {metric}",
-            dimensions=dims,
-            evidence_ids=[ev_input.id, ev_bench.id],
-        )
+        try:
+            explanation, cites = generate_explanation(
+                db,
+                title=f"Working capital opportunity: {metric}",
+                dimensions=dims,
+                evidence_ids=[ev_input.id, ev_bench.id],
+            )
+        except Exception:
+            explanation, cites = None, []
 
         situation = Situation(
             module=Module.WORKING_CAPITAL.value,

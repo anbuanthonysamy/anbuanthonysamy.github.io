@@ -139,12 +139,15 @@ def compute_deviations(db: Session) -> list[Situation]:
                 bundle = compose(dims, weights, dims["confidence"])
 
                 title = f"Post-deal deviation: {kpi.name} {last_state.replace('_', ' ')}"
-                explanation, cites = generate_explanation(
-                    db,
-                    title=title,
-                    dimensions=dims,
-                    evidence_ids=[ev.id],
-                )
+                try:
+                    explanation, cites = generate_explanation(
+                        db,
+                        title=title,
+                        dimensions=dims,
+                        evidence_ids=[ev.id],
+                    )
+                except Exception:
+                    explanation, cites = None, []
 
                 sit = Situation(
                     module=Module.POST_DEAL.value,
