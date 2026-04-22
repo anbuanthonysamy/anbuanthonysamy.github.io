@@ -33,7 +33,6 @@ export function ModulePage({
   const [selected, setSelected] = useState<SituationV2 | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
-  const [mode, setMode] = useState<"live" | "offline">("offline");
   const [scanning, setScanning] = useState(false);
 
   const apiModule = normalizeModuleForApi(module);
@@ -43,15 +42,13 @@ export function ModulePage({
     setLoading(true);
     setErr(null);
     try {
-      const [result, h, modeStatus] = await Promise.all([
+      const [result, h] = await Promise.all([
         api.situationsV2({ module: apiModule, sort_by: "score" }),
         showHeatmap ? api.heatmap(module).catch(() => []) : Promise.resolve<SectorHeatCell[]>([]),
-        api.getMode().catch(() => ({ effective_mode: "offline" as const })),
       ]);
       const list = result.situations || [];
       setItems(list);
       setHeat(h);
-      setMode(modeStatus.effective_mode);
       if (list.length && !selected) setSelected(list[0]);
       if (list.length === 0) setSelected(null);
     } catch (e: unknown) {
@@ -70,7 +67,7 @@ export function ModulePage({
     setScanning(true);
     setErr(null);
     try {
-      await api.triggerScan(mode, "worldwide");
+      await api.triggerScan("live", "worldwide");
       await load();
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : "scan failed");
@@ -87,15 +84,6 @@ export function ModulePage({
           <p className="text-sm text-neutral-light-tertiary mt-1 max-w-2xl">{subtitle}</p>
         </div>
         <div className="flex items-center gap-2">
-          <span
-            className={`text-xs font-semibold px-2 py-1 rounded border ${
-              mode === "live"
-                ? "bg-data-green/20 border-data-green text-data-green"
-                : "bg-neutral-dark-secondary border-neutral-dark-tertiary text-neutral-light-tertiary"
-            }`}
-          >
-            {mode === "live" ? "📡 Live" : "📶 Offline (demo)"}
-          </span>
           {isScanModule && (
             <button className="btn" onClick={handleScan} disabled={scanning || loading}>
               {scanning ? "Scanning…" : "Run scan"}
