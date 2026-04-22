@@ -13,7 +13,7 @@ from sqlalchemy import and_, select
 from app.api.deps import DbSession, Reviewer
 from app.explain.unsupported_claims import UnsupportedClaimsError, check_situation
 from app.models.enums import DataScope, Module, ReviewState
-from app.models.orm import Evidence, Review, Situation
+from app.models.orm import Company, Evidence, Review, Situation
 from app.models.schemas import EvidenceOut, ReviewOut, ReviewRequest, SituationOut
 
 router = APIRouter(tags=["situations"])
@@ -155,7 +155,12 @@ def review_situation(sid: str, req: ReviewRequest, db: DbSession, reviewer: Revi
 
 @router.get("/situations/sector/heatmap")
 def sector_heatmap(db: DbSession, module: str):
-    # count, avg score and top-3 ids per sector
+    # Build company_id -> sector map for scanner-generated situations
+    company_sectors: dict[str, str] = {}
+    for co in db.scalars(select(Company)).all():
+        if co.id and co.sector:
+            company_sectors[co.id] = co.sector
+
     q = (
         select(Situation)
         .where(and_(Situation.module == module))
@@ -164,7 +169,12 @@ def sector_heatmap(db: DbSession, module: str):
     buckets: dict[str, dict] = {}
     for s in db.scalars(q).all():
         extras = s.extras or {}
-        sector = extras.get("sector") or "Unclassified"
+        # Prefer extras["sector"] (CS3/CS4), fall back to company sector (CS1/CS2)
+        sector = (
+            extras.get("sector")
+            or (company_sectors.get(s.company_id) if s.company_id else None)
+            or "Unclassified"
+        )
         b = buckets.setdefault(
             sector, {"sector": sector, "count": 0, "scores": [], "ids": []}
         )
@@ -184,3 +194,30 @@ def sector_heatmap(db: DbSession, module: str):
         )
     out.sort(key=lambda x: -x["avg_score"])
     return out
+
+
+@router.post("/situations/{sid}/explain")
+def explain_situation(sid: str, db: DbSession):
+    """On-demand LLM explanation for CS3/CS4 v1 situations."""
+    from app.explain.explainer import generate_explanation
+
+    s = db.get(Situation, sid)
+    if s is None:
+        raise HTTPException(404, "situation not found")
+
+    if s.explanation:
+        return {"id": sid, "explanation": s.explanation, "cached": True}
+
+    try:
+        explanation, cites = generate_explanation(
+            db,
+            title=s.title or "",
+            dimensions=s.dimensions or {},
+            evidence_ids=s.evidence_ids or [],
+        )
+        s.explanation = explanation
+        s.explanation_cites = cites
+        db.commit()
+        return {"id": sid, "explanation": explanation, "cached": False}
+    except Exception as e:
+        raise HTTPException(503, f"LLM unavailable: {e}") from e

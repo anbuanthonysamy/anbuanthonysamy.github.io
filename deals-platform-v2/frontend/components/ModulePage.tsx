@@ -117,7 +117,7 @@ export function ModulePage({
               disabled={scanning || loading}
               title="Trigger a fresh scan of the company universe; re-fetches EDGAR, market, news, Companies House data and recomputes signals."
             >
-              {scanning ? "Scanning…" : "Run scan (live)"}
+              {scanning ? "Scanning…" : "Run scan"}
             </button>
           )}
           <button
@@ -172,6 +172,19 @@ export function ModulePage({
         </div>
       )}
 
+      <div className="panel p-3 flex flex-wrap items-center gap-x-6 gap-y-1 text-xs border border-neutral-dark-secondary">
+        <div>
+          <span className="text-neutral-dark-tertiary uppercase tracking-wide">Score</span>
+          <span className="ml-2 text-neutral-white font-medium">0–1 scale</span>
+          <span className="ml-2 text-neutral-dark-tertiary">· higher = stronger opportunity</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-data-red inline-block"></span><span className="text-neutral-light-tertiary">&ge; 0.6 high</span></span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-data-yellow inline-block"></span><span className="text-neutral-light-tertiary">0.4–0.6 medium</span></span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-status-ok inline-block"></span><span className="text-neutral-light-tertiary">&lt; 0.4 low</span></span>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         <div className="lg:col-span-2 space-y-2">
           <div>
@@ -180,8 +193,8 @@ export function ModulePage({
             </div>
             <div className="text-xs text-neutral-dark-tertiary mt-1">
               {isScanModule
-                ? "Top 15 ranked by score, tiebreaker: deal value. Country flags indicate data source (🇺🇸 S&P 500, 🇬🇧 FTSE 100)."
-                : "All opportunities ranked by score."}
+                ? "Ranked by score (0–1). Country flags: 🇺🇸 S&P 500, 🇬🇧 FTSE 100."
+                : "Ranked by score (0–1). Higher score = stronger opportunity."}
             </div>
           </div>
           {items.length === 0 && !loading && (

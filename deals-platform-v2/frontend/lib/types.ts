@@ -102,4 +102,6 @@ export interface SituationV2 {
   last_updated_at: string | null;
   explanation: string | null;
   caveats: string[];
+  // Populated lazily from v1 /situations/{id} when user opens detail
+  review?: ReviewOut;
 }

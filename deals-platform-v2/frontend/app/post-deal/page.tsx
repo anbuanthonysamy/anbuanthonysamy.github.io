@@ -144,13 +144,26 @@ export default function Page() {
 
       <Bands onRecompute={load} />
 
+      <div className="panel p-3 flex flex-wrap items-center gap-x-6 gap-y-1 text-xs border border-neutral-dark-secondary">
+        <div>
+          <span className="text-neutral-dark-tertiary uppercase tracking-wide">Score</span>
+          <span className="ml-2 text-neutral-white font-medium">0–1 scale</span>
+          <span className="ml-2 text-neutral-dark-tertiary">· higher = more urgent intervention needed</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-data-red inline-block"></span><span className="text-neutral-light-tertiary">&ge; 0.6 urgent</span></span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-data-yellow inline-block"></span><span className="text-neutral-light-tertiary">0.4–0.6 watch</span></span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-status-ok inline-block"></span><span className="text-neutral-light-tertiary">&lt; 0.4 monitor</span></span>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         <div className="lg:col-span-2 space-y-2">
           <div className="text-sm font-semibold text-neutral-white">
             Ranked situations ({items.length})
           </div>
           <div className="text-xs text-neutral-dark-tertiary">
-            All opportunities ranked by score.
+            Ranked by score (0–1). Higher score = stronger deviation / higher intervention priority.
           </div>
           {items.length === 0 && !loading && (
             <div className="panel p-3 text-sm text-neutral-dark-tertiary">

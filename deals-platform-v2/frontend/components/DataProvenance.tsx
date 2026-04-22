@@ -45,15 +45,15 @@ export function DataProvenance({
         <span className="ml-2 text-neutral-white font-medium">{evidenceCount}</span>
       </div>
       <div className="flex items-center gap-2">
-        <span className="text-neutral-dark-tertiary uppercase tracking-wide">Mode</span>
+        <span className="text-neutral-dark-tertiary uppercase tracking-wide">Evidence mode</span>
         {modes.live > 0 && (
-          <span className="pill" title="Live-fetched evidence">live {modes.live}</span>
+          <span className="pill" title={`${modes.live} evidence items fetched from live APIs`}>live ({modes.live} rows)</span>
         )}
         {modes.fixture > 0 && (
-          <span className="pill" title="Fixture-backed evidence">fixture {modes.fixture}</span>
+          <span className="pill" title={`${modes.fixture} evidence items from local fixtures`}>fixture ({modes.fixture} rows)</span>
         )}
         {modes.blocked > 0 && (
-          <span className="pill" title="Source blocked">blocked {modes.blocked}</span>
+          <span className="pill" title={`${modes.blocked} evidence items blocked/unavailable`}>blocked ({modes.blocked} rows)</span>
         )}
         {evidenceCount === 0 && <span className="text-neutral-dark-tertiary">none</span>}
       </div>

@@ -227,6 +227,15 @@ export const api = {
     }
     throw staticReadOnlyError("generateExplanation");
   },
+  generateExplanationV1: async (id: string) => {
+    if (!isStatic) {
+      return liveReq<{ id: string; explanation: string; cached: boolean }>(
+        `/situations/${id}/explain`,
+        { method: "POST" },
+      );
+    }
+    throw staticReadOnlyError("postDealCompute");
+  },
   getMode: async () => {
     if (!isStatic) {
       return liveReq<{

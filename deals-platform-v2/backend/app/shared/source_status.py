@@ -24,7 +24,7 @@ MODULE_SOURCES: dict[str, list[dict]] = {
         {"id": "edgar.xbrl_companyfacts", "name": "SEC EDGAR (company facts / XBRL)", "required": True},
         {"id": "market.yfinance", "name": "Yahoo Finance (market data)", "required": True},
         {"id": "news.google_rss", "name": "Google News RSS", "required": False},
-        {"id": "companies_house", "name": "UK Companies House", "required": False},
+        {"id": "reg.companies_house", "name": "UK Companies House", "required": False},
     ],
     "carve_outs": [
         {"id": "edgar.xbrl_segment_facts", "name": "SEC EDGAR (segment facts)", "required": True},
@@ -32,6 +32,7 @@ MODULE_SOURCES: dict[str, list[dict]] = {
         {"id": "edgar.submissions", "name": "SEC EDGAR (submissions)", "required": False},
         {"id": "market.yfinance", "name": "Yahoo Finance (market data)", "required": True},
         {"id": "news.google_rss", "name": "Google News RSS", "required": False},
+        {"id": "reg.companies_house", "name": "UK Companies House", "required": False},
     ],
     "post_deal": [
         {"id": "upload.client_kpi", "name": "Client KPI upload (mock)", "required": True, "mocked": True},
