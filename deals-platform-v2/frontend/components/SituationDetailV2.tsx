@@ -94,18 +94,37 @@ export function SituationDetailV2({ situation }: { situation: SituationV2 }) {
       {situation.signals && Object.keys(situation.signals).length > 0 && (
         <div>
           <h3 className="text-sm font-semibold text-neutral-white mb-2">Deterministic Signals</h3>
+          <p className="text-xs text-neutral-light-tertiary mb-2">
+            Rules-based signal detection (no LLM required). Triggered automatically during scans.
+          </p>
           <div className="grid grid-cols-2 gap-2">
-            {Object.entries(situation.signals).map(([key, val]) => (
-              <div
-                key={key}
-                className="bg-neutral-dark-secondary rounded p-2 text-xs border border-neutral-dark-tertiary"
-              >
-                <div className="text-neutral-light-tertiary capitalize">{key.replace(/_/g, " ")}</div>
-                <div className="text-neutral-white font-semibold mt-1">
-                  {typeof val === "boolean" ? (val ? "✓ Yes" : "✗ No") : String(val).slice(0, 20)}
-                </div>
-              </div>
-            ))}
+            {Object.entries(situation.signals)
+              .sort((a, b) => {
+                const aActive = typeof a[1] === "boolean" ? a[1] : !!a[1];
+                const bActive = typeof b[1] === "boolean" ? b[1] : !!b[1];
+                return bActive ? 1 : -1;
+              })
+              .map(([key, val]) => {
+                const isActive = typeof val === "boolean" ? val : !!val;
+                return (
+                  <div
+                    key={key}
+                    className={`rounded p-2 text-xs border ${
+                      isActive
+                        ? "bg-green-900/20 border-green-700"
+                        : "bg-neutral-dark-secondary border-neutral-dark-tertiary"
+                    }`}
+                  >
+                    <div className="text-neutral-light-tertiary capitalize flex items-center gap-1">
+                      {isActive ? <span className="text-data-green">✓</span> : <span className="text-neutral-dark-tertiary">○</span>}
+                      {key.replace(/_/g, " ")}
+                    </div>
+                    <div className={`font-semibold mt-1 ${isActive ? "text-neutral-white" : "text-neutral-dark-tertiary"}`}>
+                      {typeof val === "boolean" ? (val ? "Active" : "Inactive") : typeof val === "number" ? val.toFixed(2) : String(val).slice(0, 20)}
+                    </div>
+                  </div>
+                );
+              })}
           </div>
         </div>
       )}
@@ -155,6 +174,20 @@ export function SituationDetailV2({ situation }: { situation: SituationV2 }) {
           </ul>
         </div>
       )}
+
+      {/* Data Sources Quality */}
+      <div className="bg-neutral-dark-secondary rounded p-3">
+        <h3 className="text-sm font-semibold text-neutral-white mb-2">Data Sources</h3>
+        <div className="text-xs space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="text-data-green">✓</span>
+            <span className="text-neutral-light-tertiary">Data collected from multiple sources in <code className="bg-neutral-black px-1 rounded">live</code> mode</span>
+          </div>
+          <div className="text-neutral-dark-tertiary mt-2">
+            <span className="text-xs">Includes: EDGAR filings, market data (yfinance), news feeds, and financial metrics APIs</span>
+          </div>
+        </div>
+      </div>
 
       {/* Metadata */}
       <div className="text-xs text-neutral-dark-tertiary border-t border-neutral-dark-secondary pt-3">

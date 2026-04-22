@@ -119,34 +119,39 @@ export function SituationCardV2({
 
       {situation.signals && Object.keys(situation.signals).length > 0 && (
         <div className="mt-2 text-xs">
-          <div className="text-neutral-light-tertiary mb-1">Signals:</div>
+          <div className="text-neutral-light-tertiary mb-1">Signals triggered:</div>
           <div className="flex flex-wrap gap-1">
             {Object.entries(situation.signals)
-              .slice(0, 3)
-              .map(([key, val]) => {
-                if (typeof val === "boolean" && val) {
-                  return (
-                    <span
-                      key={key}
-                      className="bg-neutral-dark-secondary px-1.5 py-0.5 rounded text-neutral-light-tertiary"
-                    >
-                      {key.replace(/_/g, " ")}
-                    </span>
-                  );
-                }
-                if (typeof val === "number" && val > 0) {
-                  return (
-                    <span
-                      key={key}
-                      className="bg-neutral-dark-secondary px-1.5 py-0.5 rounded text-neutral-light-tertiary"
-                    >
-                      {key.replace(/_/g, " ")}: {val.toFixed(1)}
-                    </span>
-                  );
-                }
-                return null;
+              .filter(([, val]) => {
+                if (typeof val === "boolean") return val;
+                if (typeof val === "number") return val > 0;
+                return !!val;
               })
-              .filter(Boolean)}
+              .slice(0, 3)
+              .map(([key, val]) => (
+                <span
+                  key={key}
+                  className="bg-green-900/30 border border-green-700 px-1.5 py-0.5 rounded text-green-100 font-medium"
+                >
+                  {key.replace(/_/g, " ")}
+                  {typeof val === "number" && val > 0 ? `: ${val.toFixed(1)}` : ""}
+                </span>
+              ))}
+            {Object.entries(situation.signals).filter(([, val]) => {
+              if (typeof val === "boolean") return val;
+              if (typeof val === "number") return val > 0;
+              return !!val;
+            }).length > 3 && (
+              <span className="text-neutral-dark-tertiary text-xs">
+                +{
+                  Object.entries(situation.signals).filter(([, val]) => {
+                    if (typeof val === "boolean") return val;
+                    if (typeof val === "number") return val > 0;
+                    return !!val;
+                  }).length - 3
+                } more
+              </span>
+            )}
           </div>
         </div>
       )}
