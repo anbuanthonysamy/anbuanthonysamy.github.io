@@ -25,6 +25,7 @@ from app.scanner.api import router as scanner_router
 from app.scanner.jobs import schedule_daily_scan
 from app.scanner.service import run_full_scan
 from app.scripts.seed_companies import seed_sp500_ftse100
+from app.scripts.seed_cs3_cs4 import seed_cs3_cs4
 from app.shared.scheduler import build_scheduler
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
@@ -66,6 +67,13 @@ def _seed_and_scan(is_empty: bool) -> None:
         log.info("Refreshing S&P 500 + FTSE 100 company fixture (upsert)...")
         added = seed_sp500_ftse100(db=db)
         log.info(f"Seed complete: {added} new companies added, existing rows updated")
+
+        # CS3/CS4 synthetic seed (idempotent) — renders module pages on first load
+        try:
+            cs34 = seed_cs3_cs4(db)
+            log.info(f"CS3/CS4 seed complete: {cs34}")
+        except Exception as e:
+            log.warning(f"CS3/CS4 seed failed (non-fatal): {e}")
 
         if is_empty:
             log.info("Database was empty — triggering initial live scan...")
