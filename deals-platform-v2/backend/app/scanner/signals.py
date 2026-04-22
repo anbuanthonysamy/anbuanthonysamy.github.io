@@ -90,7 +90,7 @@ async def cs1_signal_scorer(
         if edgar_facts and company.cik:
             facts_items = await _fetch_with_tracking(
                 "origination", "edgar.xbrl_companyfacts", api_mode,
-                edgar_facts.fetch, cik=company.cik, company_name=company.name, api_mode=api_mode,
+                edgar_facts.fetch, cik=company.cik, company_name=company.name,
             )
             if facts_items:
                 facts_meta = _extract_financial_metrics(facts_items)
@@ -101,7 +101,7 @@ async def cs1_signal_scorer(
         if market and company.ticker:
             market_items = await _fetch_with_tracking(
                 "origination", "market.yfinance", api_mode,
-                market.fetch, ticker=company.ticker, sector=company.sector, api_mode=api_mode,
+                market.fetch, ticker=company.ticker, sector=company.sector,
             )
             if market_items:
                 market_meta = _extract_market_metrics(market_items)
@@ -112,7 +112,7 @@ async def cs1_signal_scorer(
         if edgar_submissions and company.cik:
             filing_items = await _fetch_with_tracking(
                 "origination", "edgar.submissions", api_mode,
-                edgar_submissions.fetch, cik=company.cik, company_name=company.name, api_mode=api_mode,
+                edgar_submissions.fetch, cik=company.cik, company_name=company.name,
             )
             if filing_items:
                 filings = [item for item in filing_items if item.kind == "filing_13d"]
@@ -199,7 +199,7 @@ async def cs2_signal_scorer(
         if segment_facts and company.cik:
             segment_items = await _fetch_with_tracking(
                 "carve_outs", "edgar.xbrl_segment_facts", api_mode,
-                segment_facts.fetch, cik=company.cik, company_name=company.name, api_mode=api_mode,
+                segment_facts.fetch, cik=company.cik, company_name=company.name,
             )
             if segment_items:
                 segment_meta = _extract_segment_metrics(segment_items)
@@ -210,7 +210,7 @@ async def cs2_signal_scorer(
         if edgar_facts and company.cik:
             facts_items = await _fetch_with_tracking(
                 "carve_outs", "edgar.xbrl_companyfacts", api_mode,
-                edgar_facts.fetch, cik=company.cik, company_name=company.name, api_mode=api_mode,
+                edgar_facts.fetch, cik=company.cik, company_name=company.name,
             )
             if facts_items:
                 facts_meta = _extract_financial_metrics(facts_items)
@@ -220,7 +220,7 @@ async def cs2_signal_scorer(
         if market and company.ticker:
             await _fetch_with_tracking(
                 "carve_outs", "market.yfinance", api_mode,
-                market.fetch, ticker=company.ticker, sector=company.sector, api_mode=api_mode,
+                market.fetch, ticker=company.ticker, sector=company.sector,
             )
 
         # 1. Balance sheet stress: Net debt escalation (using helper)
