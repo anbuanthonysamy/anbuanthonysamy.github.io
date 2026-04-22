@@ -67,6 +67,14 @@ class YFinanceMarket(Source):
             pe_ratio = float(getattr(info, "trailing_pe", 0) or 0)
             name = getattr(t, "info", {}).get("shortName", ticker) if hasattr(t, "info") else ticker
 
+            # Extract financial metrics from yfinance info dict
+            full_info = getattr(t, "info", {}) or {}
+            total_debt = float(full_info.get("totalDebt", 0) or 0)
+            total_revenue = float(full_info.get("totalRevenue", 0) or 0)
+            operating_margins = float(full_info.get("operatingMargins", 0) or 0)
+            ebitda_margins = float(full_info.get("ebitdaMargins", 0) or 0)
+            return_on_assets = float(full_info.get("returnOnAssets", 0) or 0)
+
             # Compute 52-week performance
             history = t.history(period="1y")
             performance_52w = ((price - history.iloc[0]["Close"]) / history.iloc[0]["Close"] * 100) if len(history) > 0 else 0
@@ -84,6 +92,11 @@ class YFinanceMarket(Source):
             pe_ratio = float(row.get("pe_ratio", 0) or 0)
             name = row.get("name") or ticker
             performance_52w = float(row.get("performance_52w", 0) or 0)
+            total_debt = float(row.get("total_debt", 0) or 0)
+            total_revenue = float(row.get("total_revenue", 0) or 0)
+            operating_margins = float(row.get("operating_margins", 0) or 0)
+            ebitda_margins = float(row.get("ebitda_margins", 0) or 0)
+            return_on_assets = float(row.get("return_on_assets", 0) or 0)
             mode = SourceMode.FIXTURE
 
         # Compute underperformance vs sector
@@ -109,6 +122,11 @@ class YFinanceMarket(Source):
                     "performance_52w": performance_52w,
                     "underperformance_vs_sector": underperformance,
                     "sector": sector,
+                    "total_debt": total_debt,
+                    "total_revenue": total_revenue,
+                    "operating_margins": operating_margins,
+                    "ebitda_margins": ebitda_margins,
+                    "return_on_assets": return_on_assets,
                 },
             )
         ]

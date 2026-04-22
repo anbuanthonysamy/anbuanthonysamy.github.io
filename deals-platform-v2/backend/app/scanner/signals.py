@@ -129,6 +129,10 @@ async def cs1_signal_scorer(
             except Exception as e:
                 log.warning("CS1 extract market failed for %s: %s", company.ticker, e)
 
+    # If EDGAR data is missing or incomplete, use yfinance as fallback
+    if not facts_meta and market_meta:
+        facts_meta = _build_facts_from_market_metrics(market_meta)
+
     filings: list = []
     edgar_submissions = BY_ID.get("edgar.submissions")
     if edgar_submissions and company.cik:
@@ -292,13 +296,23 @@ async def cs2_signal_scorer(
             except Exception as e:
                 log.warning("CS2 extract financials failed for %s: %s", company.ticker, e)
 
+    market_meta_cs2: dict = {}
     market = BY_ID.get("market.yfinance")
     if market and company.ticker:
-        await _fetch_with_tracking(
+        market_items_cs2 = await _fetch_with_tracking(
             "carve_outs", "market.yfinance", api_mode,
             market.fetch, ticker=company.ticker, sector=company.sector,
             country=company.country,
         )
+        if market_items_cs2:
+            try:
+                market_meta_cs2 = _extract_market_metrics(market_items_cs2)
+            except Exception as e:
+                log.warning("CS2 extract market failed for %s: %s", company.ticker, e)
+
+    # If EDGAR data is missing or incomplete, use yfinance as fallback
+    if not facts_meta and market_meta_cs2:
+        facts_meta = _build_facts_from_market_metrics(market_meta_cs2)
 
     ch_meta: dict = {}
     companies_house = BY_ID.get("reg.companies_house")
@@ -477,6 +491,31 @@ async def cs4_signal_scorer(
     return 0.0, signals
 
 
+def _build_facts_from_market_metrics(market_meta: dict) -> dict:
+    """Build EDGAR-like facts dict from yfinance market metrics (fallback for UK/missing EDGAR).
+
+    Converts yfinance financial data into the same format as EDGAR facts_meta
+    so signal calculations can work uniformly across US and UK companies.
+    """
+    facts = {}
+
+    revenue = market_meta.get("total_revenue", 0)
+    if revenue:
+        facts["revenue"] = {"val": revenue, "fy": 0}
+
+    # Estimate operating income from operating margins
+    operating_margins = market_meta.get("operating_margins", 0) or 0
+    if revenue and operating_margins:
+        estimated_oi = revenue * operating_margins
+        facts["oi"] = {"val": estimated_oi, "fy": 0}
+
+    debt = market_meta.get("total_debt", 0)
+    if debt:
+        facts["debt"] = {"val": debt, "fy": 0}
+
+    return facts
+
+
 def _extract_financial_metrics(items: list) -> dict:
     """Extract key financial metrics from EDGAR RawItems."""
     metrics = {}
@@ -505,7 +544,7 @@ def _extract_financial_metrics(items: list) -> dict:
 
 
 def _extract_market_metrics(items: list) -> dict:
-    """Extract market data from RawItems."""
+    """Extract market data from RawItems, including financial metrics from yfinance."""
     metrics = {}
     for item in items:
         meta = item.meta or {}
@@ -515,6 +554,11 @@ def _extract_market_metrics(items: list) -> dict:
         metrics["performance_52w"] = meta.get("performance_52w", 0)
         metrics["underperformance_vs_sector"] = meta.get("underperformance_vs_sector", 0)
         metrics["sector"] = meta.get("sector", "")
+        metrics["total_debt"] = meta.get("total_debt", 0)
+        metrics["total_revenue"] = meta.get("total_revenue", 0)
+        metrics["operating_margins"] = meta.get("operating_margins", 0)
+        metrics["ebitda_margins"] = meta.get("ebitda_margins", 0)
+        metrics["return_on_assets"] = meta.get("return_on_assets", 0)
     return metrics
 
 
