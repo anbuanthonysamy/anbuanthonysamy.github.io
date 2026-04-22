@@ -111,12 +111,22 @@ export function ModulePage({
         </div>
         <div className="flex items-center gap-2">
           {isScanModule && (
-            <button className="btn" onClick={handleScan} disabled={scanning || loading}>
-              {scanning ? "Scanning…" : "Run scan"}
+            <button
+              className="btn-primary"
+              onClick={handleScan}
+              disabled={scanning || loading}
+              title="Trigger a fresh scan of the company universe; re-fetches EDGAR, market, news, Companies House data and recomputes signals."
+            >
+              {scanning ? "Scanning…" : "Run scan (live)"}
             </button>
           )}
-          <button className="btn" onClick={load} disabled={loading}>
-            {loading ? "Loading…" : "Refresh"}
+          <button
+            className="btn text-xs"
+            onClick={load}
+            disabled={loading}
+            title="Re-render the list from the database (no external API calls)."
+          >
+            {loading ? "Loading…" : "↻ Reload list"}
           </button>
         </div>
       </div>
@@ -136,14 +146,14 @@ export function ModulePage({
               </div>
             </div>
             <div className="flex items-start gap-2">
-              <span className="inline-block w-3 h-3 rounded-full bg-data-amber shrink-0 mt-0.5"></span>
+              <span className="inline-block w-3 h-3 rounded-full bg-data-yellow shrink-0 mt-0.5"></span>
               <div>
                 <span className="font-semibold text-neutral-white">P2 Monitor</span>
                 <p className="text-neutral-dark-tertiary">Material signals; monitor for catalysts or escalation.</p>
               </div>
             </div>
             <div className="flex items-start gap-2">
-              <span className="inline-block w-3 h-3 rounded-full bg-data-green shrink-0 mt-0.5"></span>
+              <span className="inline-block w-3 h-3 rounded-full bg-status-ok shrink-0 mt-0.5"></span>
               <div>
                 <span className="font-semibold text-neutral-white">P3 Monitor</span>
                 <p className="text-neutral-dark-tertiary">Early-stage signals; longer horizon, no immediate catalyst.</p>

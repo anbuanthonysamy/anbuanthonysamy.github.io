@@ -213,7 +213,23 @@ def seed_cs3_cs4(db: Session, subject: str = "SampleCo", sector: str = "Consumer
         result["cs3_situations"] = len(sits)
         log.info(f"CS3 seeded: {len(kpis)} KPIs, {len(sits)} deviation situations")
     else:
-        log.info("CS3 KPIs already present — skipping CS3 seed")
+        # KPIs already exist — verify situations do too. If a previous run
+        # seeded KPIs but compute_deviations failed or was skipped, the page
+        # renders empty. Re-run compute_deviations in that case (idempotent;
+        # it only flags deviations that actually exist).
+        cs3_situation = db.scalar(
+            select(Situation)
+            .where(Situation.module == Module.POST_DEAL.value)
+            .limit(1)
+        )
+        if cs3_situation is None:
+            sits = compute_deviations(db)
+            result["cs3_situations"] = len(sits)
+            log.info(
+                f"CS3 KPIs present but no situations — recomputed: {len(sits)}"
+            )
+        else:
+            log.info("CS3 KPIs and situations already present — skipping CS3 seed")
 
     # CS4: Seed diagnostic if no working-capital situations exist
     cs4_existing = db.scalar(

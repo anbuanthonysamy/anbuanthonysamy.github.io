@@ -185,6 +185,194 @@ class ContinuousScanner:
             or signals.get("pe_interest_signals", False)
         )
 
+    def _dimensions_from_signals(self, module: Module, signals: dict) -> dict:
+        """Map deterministic signal values onto named score dimensions.
+
+        Review-queue cards and the score-breakdown panel render one bar per
+        dimension. Without this mapping the card shows "no dimensions scored".
+        """
+        def _clip(x: float) -> float:
+            if x is None:
+                return 0.0
+            return max(0.0, min(1.0, float(x)))
+
+        if module == Module.ORIGINATION:
+            return {
+                "likelihood": _clip(signals.get("activist_signal_strength", 0)),
+                "expected_scale": _clip(
+                    (signals.get("net_debt_ebitda", 0) or 0) / 5.0
+                ),
+                "timing_fit": 1.0 if signals.get("active_13d_filing") else 0.3,
+                "confidence": _clip(
+                    (signals.get("margin_compression_pct", 0) or 0) / 30.0
+                ),
+                "sector_relevance": _clip(
+                    (signals.get("pe_discount_pct", 0) or 0) / 40.0
+                ),
+                "strategic_relevance": 1.0
+                if signals.get("leverage_stress")
+                else 0.3,
+            }
+        if module == Module.CARVE_OUTS:
+            return {
+                "divestment_likelihood": _clip(
+                    signals.get("separation_readiness", 0)
+                ),
+                "urgency": _clip(signals.get("stress_signals", 0)),
+                "feasibility": _clip(signals.get("separation_readiness", 0)),
+                "expected_value": _clip(
+                    (signals.get("standalone_revenue_pct", 0) or 0)
+                ),
+                "confidence": 0.5,
+            }
+        if module == Module.POST_DEAL:
+            return {
+                "synergy_gap": _clip(
+                    (signals.get("synergy_gap_pct", 0) or 0) / 100.0
+                ),
+                "execution_risk": _clip(signals.get("execution_risk", 0.3)),
+                "value_at_stake": _clip(signals.get("value_at_stake", 0.3)),
+            }
+        if module == Module.WORKING_CAPITAL:
+            return {
+                "cash_opportunity": _clip(
+                    (signals.get("cash_opportunity_usd", 0) or 0) / 100_000_000.0
+                ),
+                "feasibility": _clip(
+                    signals.get("implementation_feasibility", 0)
+                ),
+                "quick_win": _clip(signals.get("quick_win_pct", 0)),
+            }
+        return {}
+
+    def _confidence_from_signals(self, signals: dict) -> float:
+        """Return a coarse confidence based on how many signals carry real data."""
+        if not signals:
+            return 0.0
+        meaningful = 0
+        total = 0
+        for key, val in signals.items():
+            total += 1
+            if isinstance(val, bool):
+                if val:
+                    meaningful += 1
+            elif isinstance(val, (int, float)) and val:
+                meaningful += 1
+        if total == 0:
+            return 0.0
+        return round(min(1.0, meaningful / total + 0.2), 2)
+
+    def _summary_from_signals(
+        self, module: Module, company: Company, signals: dict
+    ) -> str:
+        """Build a one-line human summary from the top few active signals."""
+        active: list[str] = []
+        for k, v in signals.items():
+            label = k.replace("_", " ")
+            if isinstance(v, bool) and v:
+                active.append(label)
+            elif isinstance(v, (int, float)) and v:
+                active.append(f"{label} {v:.1f}")
+            if len(active) >= 3:
+                break
+        if not active:
+            return f"{company.name}: no material signals triggered; carried for universe coverage."
+        return f"{company.name}: " + "; ".join(active) + "."
+
+    def _build_evidence_from_sources(
+        self, company: Company, module: Module, signals: dict
+    ) -> tuple[list[str], list]:
+        """Create Evidence rows for each public source that contributed real data.
+
+        Keeps the Review Queue 'evidence' counter honest and gives the
+        on-demand explanation endpoint something to cite.
+        """
+        from app.models.enums import DataScope, SourceMode
+        from app.shared.evidence import upsert_evidence
+
+        ids: list[str] = []
+        records = []
+        module_key = module.value if hasattr(module, "value") else str(module)
+        has_financial_metric = any(
+            isinstance(signals.get(k), (int, float)) and signals.get(k)
+            for k in (
+                "net_debt_ebitda",
+                "margin_compression_pct",
+                "pe_discount_pct",
+                "market_underperformance_pct",
+            )
+        )
+        has_catalyst = any(
+            signals.get(k)
+            for k in (
+                "active_13d_filing",
+                "fresh_leadership_change",
+                "activist_board_appointment",
+            )
+        )
+
+        # edgar.xbrl_companyfacts if we derived any financial metric
+        if has_financial_metric and company.cik:
+            ev = upsert_evidence(
+                self.db,
+                source_id="edgar.xbrl_companyfacts",
+                scope=DataScope.PUBLIC,
+                mode=SourceMode.LIVE,
+                kind="xbrl_snapshot",
+                title=f"{company.name} — XBRL financial metrics",
+                snippet=(
+                    f"Net Debt/EBITDA {signals.get('net_debt_ebitda', 0):.2f}; "
+                    f"margin compression {signals.get('margin_compression_pct', 0):.1f}%."
+                ),
+                company_id=company.id,
+                meta={"module": module_key},
+            )
+            ids.append(ev.id)
+            records.append(ev)
+
+        # market.yfinance for market-level signals
+        if company.ticker and (
+            signals.get("pe_discount_pct")
+            or signals.get("market_underperformance_pct")
+        ):
+            ev = upsert_evidence(
+                self.db,
+                source_id="market.yfinance",
+                scope=DataScope.PUBLIC,
+                mode=SourceMode.LIVE,
+                kind="market",
+                title=f"{company.name} — market snapshot ({company.ticker})",
+                snippet=(
+                    f"PE discount {signals.get('pe_discount_pct', 0):.1f}%; "
+                    f"market underperformance {signals.get('market_underperformance_pct', 0):.1f}%."
+                ),
+                company_id=company.id,
+                meta={"module": module_key},
+            )
+            ids.append(ev.id)
+            records.append(ev)
+
+        # edgar.submissions for 13D / leadership filings
+        if has_catalyst and company.cik:
+            ev = upsert_evidence(
+                self.db,
+                source_id="edgar.submissions",
+                scope=DataScope.PUBLIC,
+                mode=SourceMode.LIVE,
+                kind="filing",
+                title=f"{company.name} — recent filings suggest catalyst",
+                snippet=(
+                    f"13D filing active: {signals.get('active_13d_filing', False)}; "
+                    f"leadership change: {signals.get('fresh_leadership_change', False)}."
+                ),
+                company_id=company.id,
+                meta={"module": module_key},
+            )
+            ids.append(ev.id)
+            records.append(ev)
+
+        return ids, records
+
     def _upsert_situation(
         self,
         company: Company,
@@ -202,6 +390,17 @@ class ContinuousScanner:
 
         now = datetime.utcnow()
 
+        # Derive dimensions, confidence, summary from signals so that the
+        # Review Queue and explanation endpoints have useful data. Without
+        # this, the scanner writes bare score+signals rows and every card
+        # displays "conf 0% / 0 evidence / no dimensions".
+        dimensions = self._dimensions_from_signals(module, signals)
+        confidence = self._confidence_from_signals(signals)
+        summary = self._summary_from_signals(module, company, signals)
+        evidence_ids, evidence_records = self._build_evidence_from_sources(
+            company, module, signals
+        )
+
         if existing:
             # Update: track score_delta, update last_updated_at
             score_delta = score - existing.score
@@ -210,17 +409,25 @@ class ContinuousScanner:
             existing.signals = signals
             existing.score_delta = score_delta
             existing.last_updated_at = now
+            existing.dimensions = dimensions
+            existing.confidence = confidence
+            existing.summary = summary
+            existing.evidence_ids = evidence_ids
             situation = existing
         else:
             # Create: set first_seen_at
             title = f"{company.name} — {module.value.replace('_', ' ').title()}"
             situation = Situation(
                 title=title,
+                summary=summary,
                 company_id=company.id,
                 module=module.value,
                 score=score,
                 tier=tier,
                 signals=signals,
+                dimensions=dimensions,
+                confidence=confidence,
+                evidence_ids=evidence_ids,
                 first_seen_at=now,
                 last_updated_at=now,
                 score_delta=0.0,
@@ -255,8 +462,64 @@ async def run_full_scan(
         "cs3": await scanner.scan_cs3_post_deal(),
         "cs4": await scanner.scan_cs4_working_capital(),
         "timestamp": datetime.utcnow(),
-        "geography": geography.value,
-        "api_mode": api_mode,
     }
 
+    # Sync per-module TRACKER state into the global Source DB table so the
+    # /sources page reflects what the scan just did instead of always
+    # displaying "never_refreshed".
+    try:
+        _sync_tracker_to_source_rows(db_session)
+    except Exception as e:
+        log.warning(f"Failed to sync tracker to source rows: {e}")
+
+    results["geography"] = geography.value
+    results["api_mode"] = api_mode
     return results
+
+
+def _sync_tracker_to_source_rows(db: Session) -> None:
+    """Project in-memory TRACKER state onto the persisted Source DB table.
+
+    The /sources page reads from the Source table; without this sync,
+    every row shows "never_refreshed" regardless of how recently scans ran.
+    """
+    from datetime import datetime as _dt, timezone
+    from app.models.orm import Source as SourceRow
+    from app.shared.source_status import TRACKER, MODULE_SOURCES
+    from app.sources.registry import BY_ID as SOURCES
+
+    # Collapse per-module statuses into one row per source_id: latest attempt wins.
+    latest: dict[str, dict] = {}
+    for module, specs in MODULE_SOURCES.items():
+        report = TRACKER.module_report(module)
+        for row in report.get("sources", []):
+            sid = row["id"]
+            ts_str = row.get("last_attempt_at")
+            if not ts_str:
+                continue
+            try:
+                ts = _dt.fromisoformat(ts_str)
+            except Exception:
+                continue
+            current = latest.get(sid)
+            if current is None or ts > current["ts"]:
+                latest[sid] = {
+                    "ts": ts,
+                    "status": row.get("status") or "unknown",
+                    "mode": row.get("mode") or "live",
+                    "detail": row.get("detail"),
+                }
+
+    for sid, info in latest.items():
+        src = SOURCES.get(sid)
+        name = src.name if src else sid
+        db_row = db.scalar(select(SourceRow).where(SourceRow.id == sid))
+        if db_row is None:
+            db_row = SourceRow(id=sid, name=name, mode=info["mode"])
+            db.add(db_row)
+        db_row.last_refresh_at = info["ts"].astimezone(timezone.utc).replace(tzinfo=None)
+        db_row.last_status = info["status"]
+        db_row.last_error = info["detail"] if info["status"] == "error" else None
+        db_row.mode = info["mode"]
+
+    db.commit()
