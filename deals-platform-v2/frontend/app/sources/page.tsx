@@ -40,11 +40,6 @@ export default function Page() {
     <div className="p-6 space-y-4">
       <div>
         <h1 className="text-xl font-semibold text-neutral-white">Sources</h1>
-        <p className="text-sm text-neutral-light-tertiary mt-1 max-w-2xl">
-          Every adapter maps to a real named service. Where live fetch is unavailable,
-          a fixture is returned and the row is marked <code>fixture</code>. Nothing is
-          fabricated.
-        </p>
       </div>
       {err && <div className="panel p-3 text-sm text-data-red">{err}</div>}
       <div className="panel overflow-hidden">

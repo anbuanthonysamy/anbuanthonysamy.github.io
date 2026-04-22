@@ -28,8 +28,6 @@ export function TopBar() {
     ? "backend unreachable"
     : offline
     ? "offline mode"
-    : health?.live_llm
-    ? "live · LLM on"
     : "live";
 
   const tone = offline

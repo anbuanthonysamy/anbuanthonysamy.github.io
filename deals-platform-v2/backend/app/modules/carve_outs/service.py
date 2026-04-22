@@ -23,7 +23,7 @@ _SIGNALS_PATH = Path(__file__).parent.parent.parent / "signals" / "signals.yaml"
 @dataclass
 class CarveOutConfig:
     equity_floor_usd: float = 750_000_000
-    elevated_threshold: float = 0.50
+    elevated_threshold: float = 0.30
 
 
 def build_pipeline(db: Session) -> ModulePipeline:

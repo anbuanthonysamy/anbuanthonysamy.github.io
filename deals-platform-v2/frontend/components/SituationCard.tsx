@@ -34,7 +34,7 @@ export function SituationCard({
           <ModePill key={m} mode={m} />
         ))}
         <span className="text-xs text-neutral-dark-tertiary ml-auto">
-          {s.evidence.length} evidence · conf {(s.confidence * 100).toFixed(0)}%
+          {s.evidence.length} evidence
         </span>
       </div>
     </button>

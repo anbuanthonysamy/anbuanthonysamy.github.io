@@ -98,6 +98,35 @@ export function ModulePage({
 
       {isScanModule && <SourceStatusPanel module={apiModule} />}
 
+      {isScanModule && (
+        <div className="panel p-4 bg-neutral-dark-secondary/50">
+          <div className="text-sm font-semibold text-neutral-white mb-2">Priority tiers</div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+            <div className="flex items-start gap-2">
+              <span className="inline-block w-3 h-3 rounded-full bg-data-red shrink-0 mt-0.5"></span>
+              <div>
+                <span className="font-semibold text-neutral-white">P1 Hot</span>
+                <p className="text-neutral-dark-tertiary">Urgent catalyst present; recommend immediate action.</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="inline-block w-3 h-3 rounded-full bg-data-amber shrink-0 mt-0.5"></span>
+              <div>
+                <span className="font-semibold text-neutral-white">P2 Monitor</span>
+                <p className="text-neutral-dark-tertiary">Material signals; monitor for catalysts or escalation.</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="inline-block w-3 h-3 rounded-full bg-data-green shrink-0 mt-0.5"></span>
+              <div>
+                <span className="font-semibold text-neutral-white">P3 Monitor</span>
+                <p className="text-neutral-dark-tertiary">Early-stage signals; longer horizon, no immediate catalyst.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {aboveList}
 
       {showHeatmap && heat.length > 0 && (

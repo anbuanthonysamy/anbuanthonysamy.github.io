@@ -11,15 +11,32 @@ const EQUITY_THRESHOLDS = {
 };
 
 function EquityThresholdsEditor() {
-  const [thresholds, setThresholds] = useState<Record<string, number>>(
-    Object.keys(EQUITY_THRESHOLDS).reduce((acc, module) => {
+  const [thresholds, setThresholds] = useState<Record<string, number>>(() => {
+    // Load from localStorage on mount, fallback to defaults
+    if (typeof window === "undefined") {
+      return Object.keys(EQUITY_THRESHOLDS).reduce((acc, module) => {
+        acc[module] = EQUITY_THRESHOLDS[module as keyof typeof EQUITY_THRESHOLDS].default;
+        return acc;
+      }, {} as Record<string, number>);
+    }
+    const stored = localStorage.getItem("equityThresholds");
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch {
+        // Fall through to defaults if parse fails
+      }
+    }
+    return Object.keys(EQUITY_THRESHOLDS).reduce((acc, module) => {
       acc[module] = EQUITY_THRESHOLDS[module as keyof typeof EQUITY_THRESHOLDS].default;
       return acc;
-    }, {} as Record<string, number>)
-  );
+    }, {} as Record<string, number>);
+  });
   const [saved, setSaved] = useState(false);
 
   const save = async () => {
+    // Persist to localStorage
+    localStorage.setItem("equityThresholds", JSON.stringify(thresholds));
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };
