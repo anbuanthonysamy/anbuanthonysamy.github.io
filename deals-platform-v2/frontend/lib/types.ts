@@ -90,6 +90,7 @@ export interface CompanyOut {
 export interface SituationV2 {
   id: string;
   module: string;
+  rank?: number;  // 1-based ranking in module
   company_id: string | null;
   company?: CompanyOut;
   tier: string | null;

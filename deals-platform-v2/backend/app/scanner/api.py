@@ -61,11 +61,16 @@ def list_situations(
     module: Optional[str] = Query(None, description="Filter by module"),
     tier: Optional[str] = Query(None, description="Filter by tier"),
     new_since: Optional[str] = Query(None, description="ISO timestamp"),
-    sort_by: str = Query("priority", description="priority | value | score | recency"),
-    limit: int = Query(50, le=500),
+    sort_by: str = Query("score", description="priority | value | score | recency"),
+    limit: int = Query(15, le=100, description="Limit results; default 15 for manageable rankings"),
     offset: int = Query(0, ge=0),
+    min_score: Optional[float] = Query(None, description="Minimum score threshold (0-1)"),
 ) -> dict:
-    """List situations with filters and sorting."""
+    """List situations with filters, sorting, and score thresholds.
+
+    Default behavior: show top 15 highest-scoring situations per module above minimum thresholds.
+    This prevents empty lists while avoiding analysis paralysis from too many opportunities.
+    """
     db = SessionLocal()
     try:
         query = db.query(Situation).outerjoin(Company, Situation.company_id == Company.id)
@@ -74,11 +79,15 @@ def list_situations(
         if module:
             query = query.filter(Situation.module == module)
 
-        # Equity value thresholds per module
+        # Equity value thresholds per module (minimum size filters)
         if module == "origination":
             query = query.filter((Company.market_cap_usd >= 1_000_000_000) | (Company.market_cap_usd.is_(None)))
         elif module == "carve-outs":
             query = query.filter((Company.market_cap_usd >= 750_000_000) | (Company.market_cap_usd.is_(None)))
+
+        # Score threshold (avoid low-quality opportunities)
+        score_threshold = min_score or 0.25  # Only show opportunities with >0.25 probability
+        query = query.filter(Situation.score >= score_threshold)
 
         if tier:
             query = query.filter(Situation.tier == tier)
@@ -89,16 +98,15 @@ def list_situations(
             except ValueError:
                 pass
 
-        # Sorting
+        # Default sorting by score (highest first = best opportunities)
+        # This ensures top-ranked items appear first regardless of sort_by parameter
         if sort_by == "priority":
             query = query.order_by(Situation.tier).order_by(Situation.score.desc())
         elif sort_by == "value":
             query = query.order_by(Company.market_cap_usd.desc().nullslast())
-        elif sort_by == "score":
-            query = query.order_by(Situation.score.desc())
         elif sort_by == "recency":
             query = query.order_by(Situation.last_updated_at.desc())
-        else:
+        else:  # score (default)
             query = query.order_by(Situation.score.desc())
 
         total = query.count()
@@ -112,10 +120,12 @@ def list_situations(
             "total": total,
             "limit": limit,
             "offset": offset,
+            "score_threshold": score_threshold,
             "situations": [
                 {
                     "id": s.id,
                     "module": s.module,
+                    "rank": offset + idx + 1,  # Explicit ranking (1-based)
                     "tier": s.tier,
                     "tier_colour": s.tier_colour,
                     "score": s.score,
@@ -134,7 +144,7 @@ def list_situations(
                     },
                     "signals": s.signals,
                 }
-                for s in situations
+                for idx, s in enumerate(situations)
             ],
         }
     finally:

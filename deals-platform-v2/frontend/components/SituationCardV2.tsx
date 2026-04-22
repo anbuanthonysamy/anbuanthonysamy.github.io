@@ -69,13 +69,20 @@ export function SituationCardV2({
       `}
     >
       <div className="flex items-start gap-2">
+        <div className="flex-none">
+          {situation.rank && (
+            <div className="text-lg font-bold text-neutral-white bg-neutral-dark-secondary rounded-full w-8 h-8 flex items-center justify-center">
+              {situation.rank}
+            </div>
+          )}
+        </div>
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <span className={`text-xs font-semibold px-2 py-1 rounded ${style.badge}`}>
               {situation.tier?.replace("_", " ").toUpperCase() || "MONITOR"}
             </span>
             <span className="text-sm font-mono text-neutral-light-tertiary">
-              {situation.score.toFixed(2)}
+              Score {situation.score.toFixed(2)}
             </span>
           </div>
           <div className="flex items-center gap-1 mt-1">
