@@ -123,7 +123,7 @@ class ContinuousScanner:
         stmt = select(Company).where(Company.market_cap_usd >= min_equity_value)
 
         if geography == Geography.UK_ONLY:
-            stmt = stmt.where(Company.country == "GB")
+            stmt = stmt.where(Company.country == "UK")
 
         return self.db.execute(stmt).scalars().all()
 
