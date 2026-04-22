@@ -76,16 +76,25 @@ def list_situations(
     """
     db = SessionLocal()
     try:
+        # Normalize module name (accept both hyphen and underscore variants)
+        normalized_module = module
+        if module == "carve-outs":
+            normalized_module = "carve_outs"
+        elif module == "post-deal":
+            normalized_module = "post_deal"
+        elif module == "working-capital":
+            normalized_module = "working_capital"
+
         query = db.query(Situation).outerjoin(Company, Situation.company_id == Company.id)
 
         # Filters
-        if module:
-            query = query.filter(Situation.module == module)
+        if normalized_module:
+            query = query.filter(Situation.module == normalized_module)
 
         # Equity value thresholds per module (minimum size filters)
-        if module == "origination":
+        if normalized_module == "origination":
             query = query.filter((Company.market_cap_usd >= 1_000_000_000) | (Company.market_cap_usd.is_(None)))
-        elif module == "carve-outs":
+        elif normalized_module == "carve_outs":
             query = query.filter((Company.market_cap_usd >= 750_000_000) | (Company.market_cap_usd.is_(None)))
 
         # Score threshold (avoid low-quality opportunities)
@@ -117,7 +126,7 @@ def list_situations(
         # Module-specific limit: CS1/CS2 top 15, CS3/CS4 all
         effective_limit = limit
         if effective_limit is None:
-            if module in ("origination", "carve_outs"):
+            if normalized_module in ("origination", "carve_outs"):
                 effective_limit = 15
             else:  # CS3, CS4 - show all
                 effective_limit = 500
