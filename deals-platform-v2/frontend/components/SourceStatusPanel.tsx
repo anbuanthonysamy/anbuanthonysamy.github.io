@@ -92,19 +92,12 @@ export function SourceStatusPanel({ module }: { module?: string }) {
                   {source.name}
                 </span>
 
-                {/* Required/Mocked badge */}
-                <div className="flex gap-1">
-                  {source.required && (
-                    <span className="px-1.5 py-0.5 bg-data-red/20 text-data-red rounded text-xs">
-                      Required
-                    </span>
-                  )}
-                  {source.mocked && (
-                    <span className="px-1.5 py-0.5 bg-data-yellow/20 text-data-yellow rounded text-xs">
-                      Mocked
-                    </span>
-                  )}
-                </div>
+                {/* Mocked badge */}
+                {source.mocked && (
+                  <span className="px-1.5 py-0.5 bg-data-yellow/20 text-data-yellow rounded text-xs">
+                    Mocked
+                  </span>
+                )}
 
                 {/* Last attempt time */}
                 {source.last_attempt_at && (

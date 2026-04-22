@@ -29,6 +29,23 @@ function formatEquityValue(value: number | null): string {
   return `$${value.toFixed(0)}`;
 }
 
+function getSourceHealthIndicator(situation: SituationV2): { icon: string; title: string } {
+  // Simple heuristic: if situation has many signals, sources likely worked well
+  const signalCount = Object.entries(situation.signals || {}).filter(([, val]) => {
+    if (typeof val === "boolean") return val;
+    if (typeof val === "number") return val > 0;
+    return !!val;
+  }).length;
+
+  if (signalCount >= 3) {
+    return { icon: "✓", title: "Good data coverage" };
+  } else if (signalCount >= 1) {
+    return { icon: "◐", title: "Partial data coverage" };
+  } else {
+    return { icon: "○", title: "Limited data (fallback)" };
+  }
+}
+
 const colours: Record<string, Record<string, string>> = {
   red: {
     bg: "bg-red-900/20",
@@ -58,6 +75,7 @@ export function SituationCardV2({
 }) {
   const colour = tierToColour(situation.tier);
   const style = colours[colour];
+  const sourceHealth = getSourceHealthIndicator(situation);
 
   return (
     <button
@@ -83,6 +101,12 @@ export function SituationCardV2({
             </span>
             <span className="text-sm font-mono text-neutral-light-tertiary">
               Score {situation.score.toFixed(2)}
+            </span>
+            <span
+              className="text-neutral-light-secondary"
+              title={sourceHealth.title}
+            >
+              {sourceHealth.icon}
             </span>
           </div>
           <div className="flex items-center gap-1 mt-1">
