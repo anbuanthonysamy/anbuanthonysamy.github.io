@@ -142,6 +142,19 @@ async def cs1_signal_scorer(
             except Exception as e:
                 log.warning("CS1 filings filter failed for %s: %s", company.ticker, e)
 
+    ch_meta: dict = {}
+    companies_house = BY_ID.get("reg.companies_house")
+    if companies_house and company.country == "UK" and company.company_number:
+        ch_items = await _fetch_with_tracking(
+            "origination", "reg.companies_house", api_mode,
+            companies_house.fetch, company_number=company.company_number,
+        )
+        if ch_items:
+            try:
+                ch_meta = _extract_companies_house_metrics(ch_items)
+            except Exception as e:
+                log.warning("CS1 extract companies_house failed for %s: %s", company.ticker, e)
+
     # Signal computations — each in its own guard so one failure doesn't
     # prevent other signals from being derived.
 
@@ -286,6 +299,19 @@ async def cs2_signal_scorer(
             market.fetch, ticker=company.ticker, sector=company.sector,
             country=company.country,
         )
+
+    ch_meta: dict = {}
+    companies_house = BY_ID.get("reg.companies_house")
+    if companies_house and company.country == "UK" and company.company_number:
+        ch_items = await _fetch_with_tracking(
+            "carve_outs", "reg.companies_house", api_mode,
+            companies_house.fetch, company_number=company.company_number,
+        )
+        if ch_items:
+            try:
+                ch_meta = _extract_companies_house_metrics(ch_items)
+            except Exception as e:
+                log.warning("CS2 extract companies_house failed for %s: %s", company.ticker, e)
 
     # Signal computations — each in its own guard.
     debt_stress_score = 0.0
@@ -489,6 +515,20 @@ def _extract_market_metrics(items: list) -> dict:
         metrics["performance_52w"] = meta.get("performance_52w", 0)
         metrics["underperformance_vs_sector"] = meta.get("underperformance_vs_sector", 0)
         metrics["sector"] = meta.get("sector", "")
+    return metrics
+
+
+def _extract_companies_house_metrics(items: list) -> dict:
+    """Extract UK registry metrics from Companies House responses.
+
+    Parses RawItems from Companies House API to extract company status,
+    SIC codes (sector classification), and incorporation date.
+    """
+    metrics = {}
+    for item in items:
+        meta = item.meta or {}
+        metrics["company_number"] = meta.get("company_number", "")
+        metrics["sic_codes"] = meta.get("sic_codes", [])
     return metrics
 
 

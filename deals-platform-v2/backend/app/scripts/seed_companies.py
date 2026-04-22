@@ -67,7 +67,7 @@ def seed_companies(universe: str = "seed", db: Session = None) -> int:
             if existing:
                 # Upsert: update fixture-sourced fields so fixture corrections
                 # (e.g. a corrected CIK) take effect without requiring a DB drop.
-                for field in ("cik", "name", "sector", "country", "market_cap_usd"):
+                for field in ("cik", "company_number", "name", "sector", "country", "market_cap_usd"):
                     new_val = company_data.get(field)
                     if new_val is not None and getattr(existing, field, None) != new_val:
                         setattr(existing, field, new_val)

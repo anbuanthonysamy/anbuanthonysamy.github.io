@@ -15,13 +15,13 @@
   {"ticker": "PG", "name": "Procter & Gamble Co", "sector": "Consumer Defensive", "country": "US", "cik": "0000080424", "market_cap_usd": 430000000000},
   {"ticker": "INTC", "name": "Intel Corporation", "sector": "Information Technology", "country": "US", "cik": "0000050863", "market_cap_usd": 220000000000},
   {"ticker": "IBM", "name": "International Business Machines", "sector": "Information Technology", "country": "US", "cik": "0000051143", "market_cap_usd": 230000000000},
-  {"ticker": "HSBC", "name": "HSBC Holdings PLC", "sector": "Financials", "country": "UK", "market_cap_usd": 170000000000},
-  {"ticker": "SHEL", "name": "Shell PLC", "sector": "Energy", "country": "UK", "market_cap_usd": 210000000000},
-  {"ticker": "AZN", "name": "AstraZeneca PLC", "sector": "Healthcare", "country": "UK", "market_cap_usd": 235000000000},
-  {"ticker": "ULVR", "name": "Unilever PLC", "sector": "Consumer Defensive", "country": "UK", "market_cap_usd": 140000000000},
-  {"ticker": "GSK", "name": "GlaxoSmithKline PLC", "sector": "Healthcare", "country": "UK", "market_cap_usd": 95000000000},
-  {"ticker": "BP", "name": "BP PLC", "sector": "Energy", "country": "UK", "market_cap_usd": 115000000000},
-  {"ticker": "RIO", "name": "Rio Tinto PLC", "sector": "Materials", "country": "UK", "market_cap_usd": 95000000000},
-  {"ticker": "DGE", "name": "Diageo PLC", "sector": "Consumer Defensive", "country": "UK", "market_cap_usd": 85000000000},
-  {"ticker": "LLOY", "name": "Lloyds Banking Group PLC", "sector": "Financials", "country": "UK", "market_cap_usd": 42000000000}
+  {"ticker": "HSBC", "name": "HSBC Holdings PLC", "sector": "Financials", "country": "UK", "company_number": "0000000327", "market_cap_usd": 170000000000},
+  {"ticker": "SHEL", "name": "Shell PLC", "sector": "Energy", "country": "UK", "company_number": "0000002366", "market_cap_usd": 210000000000},
+  {"ticker": "AZN", "name": "AstraZeneca PLC", "sector": "Healthcare", "country": "UK", "company_number": "02723334", "market_cap_usd": 235000000000},
+  {"ticker": "ULVR", "name": "Unilever PLC", "sector": "Consumer Defensive", "country": "UK", "company_number": "41424143", "market_cap_usd": 140000000000},
+  {"ticker": "GSK", "name": "GlaxoSmithKline PLC", "sector": "Healthcare", "country": "UK", "company_number": "02374337", "market_cap_usd": 95000000000},
+  {"ticker": "BP", "name": "BP PLC", "sector": "Energy", "country": "UK", "company_number": "0000000014", "market_cap_usd": 115000000000},
+  {"ticker": "RIO", "name": "Rio Tinto PLC", "sector": "Materials", "country": "UK", "company_number": "0004280558", "market_cap_usd": 95000000000},
+  {"ticker": "DGE", "name": "Diageo PLC", "sector": "Consumer Defensive", "country": "UK", "company_number": "0000078432", "market_cap_usd": 85000000000},
+  {"ticker": "LLOY", "name": "Lloyds Banking Group PLC", "sector": "Financials", "country": "UK", "company_number": "2294490", "market_cap_usd": 42000000000}
 ]

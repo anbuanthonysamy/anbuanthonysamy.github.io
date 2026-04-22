@@ -50,6 +50,7 @@ class Company(Base):
     cik: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
     ticker: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
     lei: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    company_number: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
     sector: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
     country: Mapped[str | None] = mapped_column(String, nullable=True)
