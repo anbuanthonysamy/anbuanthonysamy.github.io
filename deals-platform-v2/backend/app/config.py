@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     sec_user_agent: str = "DealsPlatformPoC admin@example.com"
 
     anthropic_api_key: str | None = None
-    anthropic_model_extract: str = "claude-haiku-4-5"
+    anthropic_model_extract: str = "claude-haiku-4-5-20251001"
     anthropic_model_synth: str = "claude-sonnet-4-6"
 
     fred_api_key: str | None = None
