@@ -98,7 +98,7 @@ def list_situations(
             query = query.filter((Company.market_cap_usd >= 750_000_000) | (Company.market_cap_usd.is_(None)))
 
         # Score threshold (avoid low-quality opportunities)
-        score_threshold = min_score or 0.25
+        score_threshold = min_score or 0.20
         query = query.filter(Situation.score >= score_threshold)
 
         if tier:
