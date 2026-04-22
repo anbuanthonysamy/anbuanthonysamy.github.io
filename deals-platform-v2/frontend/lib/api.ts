@@ -227,6 +227,61 @@ export const api = {
     }
     throw staticReadOnlyError("generateExplanation");
   },
+  getMode: async () => {
+    if (!isStatic) {
+      return liveReq<{
+        stored_mode: "live" | "offline" | "auto";
+        effective_mode: "live" | "offline";
+        auto_detected: boolean;
+        available_keys: Record<string, boolean>;
+      }>("/api/v2/mode");
+    }
+    return {
+      stored_mode: "auto",
+      effective_mode: "offline",
+      auto_detected: true,
+      available_keys: { EDGAR_USER_AGENT: false, NEWS: true, YFINANCE: true, COMPANIES_HOUSE: false, FRED: false },
+    };
+  },
+  setMode: async (mode: "live" | "offline" | "auto") => {
+    if (!isStatic) {
+      return liveReq<{ stored_mode: string; effective_mode: string }>("/api/v2/mode", {
+        method: "POST",
+        body: JSON.stringify({ mode }),
+      });
+    }
+    throw staticReadOnlyError("setMode");
+  },
+  getSourceStatus: async (module?: string) => {
+    if (!isStatic) {
+      const params = module ? `?module=${module}` : "";
+      return liveReq<{
+        modules: Array<{
+          module: string;
+          overall: string;
+          sources: Array<{
+            id: string;
+            name: string;
+            status: "ok" | "error" | "skipped" | "unknown";
+            required: boolean;
+            mocked: boolean;
+            last_attempt_at: string | null;
+            detail: string | null;
+            mode: string;
+          }>;
+        }>;
+      }>(`/api/v2/scan/source-status${params}`);
+    }
+    return {
+      modules: [
+        {
+          module: module || "origination",
+          overall: "unknown",
+          sources: [],
+        },
+      ],
+    };
+  },
 };
 
 export { LIVE_BASE as BACKEND_BASE };

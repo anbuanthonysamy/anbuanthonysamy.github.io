@@ -43,9 +43,37 @@ from app.scanner.tier4_helpers import (
     score_deal_attractiveness,
     refine_signal_scoring,
 )
+from app.shared.source_status import TRACKER
 from app.sources.registry import BY_ID
 
 log = logging.getLogger(__name__)
+
+
+async def _fetch_with_tracking(
+    module: str,
+    source_id: str,
+    api_mode: str,
+    fetch_fn,
+    *args,
+    **kwargs,
+):
+    """Call a source fetch, record ok/error/skipped in the module tracker.
+
+    - In ``offline`` mode we never attempt the fetch; we record ``skipped``.
+    - In ``live`` mode we attempt the fetch and record ``ok`` or ``error``.
+    """
+    if api_mode == "offline":
+        TRACKER.record(module, source_id, "skipped",
+                       detail="Offline mode: live fetch skipped", mode="offline")
+        return None
+    try:
+        result = await asyncio.to_thread(fetch_fn, *args, **kwargs)
+        TRACKER.record(module, source_id, "ok", mode="live")
+        return result
+    except Exception as exc:
+        TRACKER.record(module, source_id, "error", detail=str(exc), mode="live")
+        log.warning("source %s failed: %s", source_id, exc)
+        return None
 
 
 async def cs1_signal_scorer(
@@ -58,32 +86,36 @@ async def cs1_signal_scorer(
     try:
         # Get EDGAR company facts (consolidated financials)
         edgar_facts = BY_ID.get("edgar.xbrl_companyfacts")
+        facts_meta = {}
         if edgar_facts and company.cik:
-            facts_items = await asyncio.to_thread(
-                edgar_facts.fetch, cik=company.cik, company_name=company.name
+            facts_items = await _fetch_with_tracking(
+                "origination", "edgar.xbrl_companyfacts", api_mode,
+                edgar_facts.fetch, cik=company.cik, company_name=company.name,
             )
-            facts_meta = _extract_financial_metrics(facts_items)
-        else:
-            facts_meta = {}
+            if facts_items:
+                facts_meta = _extract_financial_metrics(facts_items)
 
         # Get market data (for valuation and trend analysis)
         market = BY_ID.get("market.yfinance")
+        market_meta = {}
         if market and company.ticker:
-            market_items = await asyncio.to_thread(
-                market.fetch, ticker=company.ticker, sector=company.sector
+            market_items = await _fetch_with_tracking(
+                "origination", "market.yfinance", api_mode,
+                market.fetch, ticker=company.ticker, sector=company.sector,
             )
-            market_meta = _extract_market_metrics(market_items)
-        else:
-            market_meta = {}
+            if market_items:
+                market_meta = _extract_market_metrics(market_items)
 
         # Get news/filings (for catalyst signals)
         edgar_submissions = BY_ID.get("edgar.submissions")
         filings = []
         if edgar_submissions and company.cik:
-            filing_items = await asyncio.to_thread(
-                edgar_submissions.fetch, cik=company.cik, company_name=company.name
+            filing_items = await _fetch_with_tracking(
+                "origination", "edgar.submissions", api_mode,
+                edgar_submissions.fetch, cik=company.cik, company_name=company.name,
             )
-            filings = [item for item in filing_items if item.kind == "filing_13d"]
+            if filing_items:
+                filings = [item for item in filing_items if item.kind == "filing_13d"]
 
         # 1. Market & Valuation: stock underperformance vs peers
         underperformance_pct = market_meta.get("underperformance_vs_sector", 0.0)
@@ -163,27 +195,39 @@ async def cs2_signal_scorer(
     try:
         # Get segment-level facts from EDGAR
         segment_facts = BY_ID.get("edgar.xbrl_segment_facts")
+        segment_meta = {}
         if segment_facts and company.cik:
-            segment_items = await asyncio.to_thread(
-                segment_facts.fetch, cik=company.cik, company_name=company.name
+            segment_items = await _fetch_with_tracking(
+                "carve_outs", "edgar.xbrl_segment_facts", api_mode,
+                segment_facts.fetch, cik=company.cik, company_name=company.name,
             )
-            segment_meta = _extract_segment_metrics(segment_items)
-        else:
-            segment_meta = {}
+            if segment_items:
+                segment_meta = _extract_segment_metrics(segment_items)
 
         # Get company facts for debt analysis
         edgar_facts = BY_ID.get("edgar.xbrl_companyfacts")
+        facts_meta = {}
         if edgar_facts and company.cik:
-            facts_items = await asyncio.to_thread(
-                edgar_facts.fetch, cik=company.cik, company_name=company.name
+            facts_items = await _fetch_with_tracking(
+                "carve_outs", "edgar.xbrl_companyfacts", api_mode,
+                edgar_facts.fetch, cik=company.cik, company_name=company.name,
             )
-            facts_meta = _extract_financial_metrics(facts_items)
-        else:
-            facts_meta = {}
+            if facts_items:
+                facts_meta = _extract_financial_metrics(facts_items)
+
+        # Market data (underperformance + peer valuation)
+        market = BY_ID.get("market.yfinance")
+        if market and company.ticker:
+            await _fetch_with_tracking(
+                "carve_outs", "market.yfinance", api_mode,
+                market.fetch, ticker=company.ticker, sector=company.sector,
+            )
 
         # 1. Balance sheet stress: Net debt escalation (using helper)
         debt_val = facts_meta.get("debt", {}).get("val", 0)
         oi_val = facts_meta.get("oi", {}).get("val", 0)
+        current_revenue = facts_meta.get("revenue", {}).get("val", 0)
+        current_oi = oi_val
         ebitda = oi_val * 1.2 if oi_val else 1.0
         debt_stress_score, debt_stress_bool = calculate_balance_sheet_stress(debt_val, current_ebitda=ebitda)
         signals["balance_sheet_stress"] = debt_stress_bool
@@ -225,8 +269,9 @@ async def cs2_signal_scorer(
 
         # Tier 3: Advanced analysis
         # Margin trend analysis (3-year trajectory)
+        current_margin_pct = (current_oi / current_revenue * 100) if current_revenue else 0.0
         margin_trend_score, margin_trend_dir = calculate_margin_trend_3y(
-            current_margin=current_revenue / max(current_oi, 1) * 100 if current_oi else 0
+            current_margin=current_margin_pct
         )
         signals["margin_trend_score"] = margin_trend_score
         signals["margin_trend_direction"] = margin_trend_dir
@@ -256,28 +301,14 @@ async def cs2_signal_scorer(
         )
         signals["separation_probability"] = separation_prob
 
-        # Tier 3: Multi-threshold gating
-        equity_value = company.market_cap_usd or 1e9  # Default $1B if unknown
-        should_flag, gate_reason = apply_multi_threshold_gating(
-            cs2_score=score,  # Will use composite score later
-            equity_value_usd=equity_value,
-            separation_readiness=feasibility,
-            separation_probability=separation_prob,
-        )
-        signals["passes_multi_threshold_gates"] = should_flag
-        signals["gating_reason"] = gate_reason
-
-        # Tier 4: Transaction probability and deal value
-        transaction_prob = calculate_transaction_probability_model(
-            cs1_score=0.0,  # Would get from CS1 scorer
-            cs2_score=score,
-            sector_m_and_a_activity=0.5,
-        )
-        signals["transaction_probability"] = transaction_prob
-
+        # Deal value estimate (doesn't depend on composite score)
+        equity_value = getattr(company, "market_cap_usd", None) or 1e9
         deal_value, premium = calculate_deal_value_estimate(equity_value)
         signals["estimated_deal_value_usd"] = deal_value
         signals["acquisition_premium_usd"] = premium
+        signals["_equity_value_usd"] = equity_value
+        signals["_separation_readiness_cached"] = feasibility
+        signals["_separation_probability_cached"] = separation_prob
 
     except Exception as e:
         log.warning(f"Error fetching live signals for {company.ticker}: {e}")
@@ -288,10 +319,31 @@ async def cs2_signal_scorer(
             "conglomerate_discount_pct": 12.0,
             "separation_readiness": 0.65,
             "capital_stress_signals": False,
+            "_equity_value_usd": getattr(company, "market_cap_usd", None) or 1e9,
+            "_separation_readiness_cached": 0.65,
+            "_separation_probability_cached": 0.0,
         }
 
     # Composite score
     score = _score_cs2_composite(signals)
+
+    # Tier 3: Multi-threshold gating (applied after composite is known)
+    should_flag, gate_reason = apply_multi_threshold_gating(
+        cs2_score=score,
+        equity_value_usd=signals.get("_equity_value_usd", 1e9),
+        separation_readiness=signals.get("_separation_readiness_cached", 0.0),
+        separation_probability=signals.get("_separation_probability_cached", 0.0),
+    )
+    signals["passes_multi_threshold_gates"] = should_flag
+    signals["gating_reason"] = gate_reason
+
+    # Tier 4: Transaction probability (depends on composite)
+    transaction_prob = calculate_transaction_probability_model(
+        cs1_score=0.0,
+        cs2_score=score,
+        sector_m_and_a_activity=0.5,
+    )
+    signals["transaction_probability"] = transaction_prob
 
     return score, signals
 

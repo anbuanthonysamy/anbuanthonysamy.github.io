@@ -14,6 +14,7 @@ from app.config import get_settings
 from app.models.enums import Module
 from app.models.orm import KPI, Situation, Upload
 from app.models.schemas import KPIWithActualsOut, SituationOut, UploadOut
+from app.modules.post_deal.client_data import get_client_data_manager
 from app.modules.post_deal.service import (
     band_view,
     compute_deviations,
@@ -128,3 +129,34 @@ def list_deviations(db: DbSession, limit: int = 100):
         .limit(limit)
     ).all()
     return [to_out(db, s) for s in rows]
+
+
+# CS3/CS4 Mock Client Data Management
+@router.get("/mock-client-data/cs3")
+def get_cs3_mock_data():
+    """Get default or uploaded CS3 client data (post-deal KPIs and synergy tracking)."""
+    manager = get_client_data_manager()
+    return manager.get_cs3_data()
+
+
+@router.post("/mock-client-data/cs3")
+def set_cs3_mock_data(data: dict):
+    """Upload/update CS3 client data for testing."""
+    manager = get_client_data_manager()
+    result = manager.set_cs3_data(data)
+    return {**result, "data": manager.get_cs3_data()}
+
+
+@router.get("/mock-client-data/cs4")
+def get_cs4_mock_data():
+    """Get default or uploaded CS4 client data (working capital metrics)."""
+    manager = get_client_data_manager()
+    return manager.get_cs4_data()
+
+
+@router.post("/mock-client-data/cs4")
+def set_cs4_mock_data(data: dict):
+    """Upload/update CS4 client data for testing."""
+    manager = get_client_data_manager()
+    result = manager.set_cs4_data(data)
+    return {**result, "data": manager.get_cs4_data()}

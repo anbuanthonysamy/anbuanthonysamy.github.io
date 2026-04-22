@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 
 from app.api import eval as eval_router
+from app.api import mode as mode_router
 from app.api import settings as settings_router
 from app.api import situations as situations_router
 from app.api import sources as sources_router
@@ -111,6 +112,7 @@ def health() -> dict:
 app.include_router(situations_router.router)
 app.include_router(sources_router.router)
 app.include_router(settings_router.router)
+app.include_router(mode_router.router)
 app.include_router(eval_router.router)
 app.include_router(origination_router)
 app.include_router(carve_outs_router)

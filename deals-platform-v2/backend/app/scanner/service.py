@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 
 from app.models.enums import Geography, Module, Tier
 from app.models.orm import Company, Situation
+from app.shared.source_status import TRACKER
 from app.sources.registry import BY_ID as SOURCES_BY_ID
 from app.scanner.signals import (
     cs1_signal_scorer,
@@ -39,6 +40,7 @@ class ContinuousScanner:
     ) -> list[Situation]:
         """Scan for M&A origination opportunities (equity value > $1B)."""
         log.info(f"Scanning CS1 opportunities [{geography.value}]...")
+        TRACKER.reset_module("origination")
 
         # Filter to companies > $1B equity value and matching geography
         companies = self._get_companies_for_scan(
@@ -73,6 +75,7 @@ class ContinuousScanner:
     ) -> list[Situation]:
         """Scan for carve-out opportunities (equity value > $750M)."""
         log.info(f"Scanning CS2 opportunities [{geography.value}]...")
+        TRACKER.reset_module("carve_outs")
 
         companies = self._get_companies_for_scan(
             min_equity_value=750_000_000, geography=geography
@@ -230,10 +233,20 @@ class ContinuousScanner:
 
 async def run_full_scan(
     db_session: Session,
-    api_mode: str = "live",
+    api_mode: str = "auto",
     geography: Geography = Geography.WORLDWIDE,
 ) -> dict:
-    """Run a full scan across all modules."""
+    """Run a full scan across all modules.
+
+    If ``api_mode`` is ``auto`` the effective mode is read from the
+    persisted user preference (SettingKV). Otherwise the caller's explicit
+    ``live`` / ``offline`` value is honoured.
+    """
+    from app.shared.api_mode import get_mode
+
+    if api_mode == "auto":
+        api_mode = get_mode(db_session)
+
     scanner = ContinuousScanner(db_session, api_mode=api_mode)
 
     results = {
@@ -243,6 +256,7 @@ async def run_full_scan(
         "cs4": await scanner.scan_cs4_working_capital(),
         "timestamp": datetime.utcnow(),
         "geography": geography.value,
+        "api_mode": api_mode,
     }
 
     return results

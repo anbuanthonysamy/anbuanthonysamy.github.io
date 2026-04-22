@@ -15,6 +15,7 @@ from app.config import get_settings
 from app.models.enums import Module
 from app.models.orm import Situation, Upload
 from app.models.schemas import SituationOut, UploadOut
+from app.modules.post_deal.client_data import get_client_data_manager
 from app.modules.working_capital.service import WCInputs, diagnose
 
 router = APIRouter(prefix="/working-capital", tags=["working_capital"])
@@ -128,3 +129,19 @@ def history(db: DbSession, limit: int = 100):
         .limit(limit)
     ).all()
     return [to_out(db, s) for s in rows]
+
+
+# CS4 Mock Client Data Management
+@router.get("/mock-client-data")
+def get_cs4_mock_data():
+    """Get default or uploaded CS4 client data (working capital metrics)."""
+    manager = get_client_data_manager()
+    return manager.get_cs4_data()
+
+
+@router.post("/mock-client-data")
+def set_cs4_mock_data(data: dict):
+    """Upload/update CS4 client data for testing."""
+    manager = get_client_data_manager()
+    result = manager.set_cs4_data(data)
+    return {**result, "data": manager.get_cs4_data()}
