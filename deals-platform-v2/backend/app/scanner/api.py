@@ -97,9 +97,12 @@ def list_situations(
         elif normalized_module == "carve_outs":
             query = query.filter((Company.market_cap_usd >= 750_000_000) | (Company.market_cap_usd.is_(None)))
 
-        # Score threshold (avoid low-quality opportunities)
-        # Note: use explicit None check so callers can pass min_score=0 to see all.
-        score_threshold = min_score if min_score is not None else 0.20
+        # Score threshold (avoid low-quality opportunities).
+        # Default is low (0.05) so that the module pages render something
+        # even when deterministic signals barely fire (e.g. CS2 segment
+        # data missing for most of the S&P500/FTSE100 universe). Callers
+        # can raise the bar explicitly via min_score.
+        score_threshold = min_score if min_score is not None else 0.05
         query = query.filter(Situation.score >= score_threshold)
 
         if tier:
