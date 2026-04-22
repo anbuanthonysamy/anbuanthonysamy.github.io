@@ -18,12 +18,13 @@ class YFinanceMarket(Source):
     name = "Yahoo Finance (yfinance)"
     scope = DataScope.PUBLIC
 
-    def fetch(self, ticker: str, sector: str | None = None, **_: object) -> list[RawItem]:
+    def fetch(self, ticker: str, sector: str | None = None, api_mode: str = "live", **_: object) -> list[RawItem]:
         """Fetch market data and compute underperformance vs sector.
 
         Args:
             ticker: Stock ticker (e.g., 'AAPL')
             sector: Industry sector for comparison (e.g., 'Information Technology')
+            api_mode: 'live' (must fetch real data, raise on error) or 'offline' (use fixtures)
         """
         s = get_settings()
         mode = SourceMode.LIVE
@@ -42,6 +43,10 @@ class YFinanceMarket(Source):
             performance_52w = ((price - history.iloc[0]["Close"]) / history.iloc[0]["Close"] * 100) if len(history) > 0 else 0
 
         except Exception as e:
+            if api_mode == "live":
+                # In live mode, don't fall back — propagate the error
+                raise
+            # In offline mode, fall back to fixture
             log.warning("yfinance live fetch failed (%s): fallback fixture", e)
             fx = _load_fixture(s.fixtures_dir, "market_yf.json")
             row = fx.get(ticker, {})

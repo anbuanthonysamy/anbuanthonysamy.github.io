@@ -20,7 +20,7 @@ class EdgarSubmissions(Source):
     name = "SEC EDGAR Submissions"
     scope = DataScope.PUBLIC
 
-    def fetch(self, cik: str, company_name: str | None = None, **_: object) -> list[RawItem]:
+    def fetch(self, cik: str, company_name: str | None = None, api_mode: str = "live", **_: object) -> list[RawItem]:
         s = get_settings()
         cik_padded = cik.zfill(10)
         url = f"https://data.sec.gov/submissions/CIK{cik_padded}.json"
@@ -34,6 +34,10 @@ class EdgarSubmissions(Source):
                 resp.raise_for_status()
                 data = resp.json()
         except Exception as e:
+            if api_mode == "live":
+                # In live mode, don't fall back — propagate the error
+                raise
+            # In offline mode, fall back to fixture
             log.warning("edgar live fetch failed (%s): falling back to fixture", e)
             data = _load_fixture(s.fixtures_dir, f"edgar_submissions_{cik}.json")
             mode = SourceMode.FIXTURE
@@ -77,7 +81,7 @@ class EdgarCompanyFacts(Source):
     name = "SEC EDGAR XBRL Company Facts"
     scope = DataScope.PUBLIC
 
-    def fetch(self, cik: str, company_name: str | None = None, **_: object) -> list[RawItem]:
+    def fetch(self, cik: str, company_name: str | None = None, api_mode: str = "live", **_: object) -> list[RawItem]:
         s = get_settings()
         cik_padded = cik.zfill(10)
         url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik_padded}.json"
@@ -91,6 +95,10 @@ class EdgarCompanyFacts(Source):
                 r.raise_for_status()
                 data = r.json()
         except Exception as e:
+            if api_mode == "live":
+                # In live mode, don't fall back — propagate the error
+                raise
+            # In offline mode, fall back to fixture
             log.warning("edgar xbrl live fetch failed (%s): fallback fixture", e)
             data = _load_fixture(s.fixtures_dir, f"edgar_companyfacts_{cik}.json")
             mode = SourceMode.FIXTURE

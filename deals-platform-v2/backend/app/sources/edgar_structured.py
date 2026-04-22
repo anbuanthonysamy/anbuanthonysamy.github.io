@@ -25,7 +25,7 @@ class EdgarSegmentFacts(Source):
     name = "SEC EDGAR XBRL Segment Facts"
     scope = DataScope.PUBLIC
 
-    def fetch(self, cik: str, company_name: str | None = None, **_: object) -> list[RawItem]:
+    def fetch(self, cik: str, company_name: str | None = None, api_mode: str = "live", **_: object) -> list[RawItem]:
         """Fetch segment-level facts for a company.
 
         Returns RawItems for each segment with:
@@ -48,6 +48,10 @@ class EdgarSegmentFacts(Source):
                 r.raise_for_status()
                 data = r.json()
         except Exception as e:
+            if api_mode == "live":
+                # In live mode, don't fall back — propagate the error
+                raise
+            # In offline mode, fall back to fixture
             log.warning("edgar segment facts live fetch failed (%s): fallback fixture", e)
             data = _load_fixture(s.fixtures_dir, f"edgar_companyfacts_{cik}.json")
             mode = SourceMode.FIXTURE
