@@ -42,11 +42,51 @@ export function ModulePage({
     setLoading(true);
     setErr(null);
     try {
-      const [result, h] = await Promise.all([
-        api.situationsV2({ module: apiModule, sort_by: "score" }),
-        showHeatmap ? api.heatmap(module).catch(() => []) : Promise.resolve<SectorHeatCell[]>([]),
-      ]);
-      const list = result.situations || [];
+      let list: SituationV2[] = [];
+      let h: SectorHeatCell[] = [];
+
+      // CS1/CS2 use v2 scanner endpoint; CS3/CS4 use v1 endpoint
+      if (isScanModule) {
+        const result = await api.situationsV2({ module: apiModule, sort_by: "score" });
+        list = result.situations || [];
+      } else {
+        const v1Situations = await api.situations({ module: apiModule, limit: 100 });
+        // Convert v1 SituationOut to SituationV2 format for display
+        list = v1Situations.map(s => ({
+          id: s.id,
+          module: s.module,
+          title: s.title,
+          summary: s.summary,
+          score: s.score,
+          confidence: s.confidence,
+          tier: "p3",
+          signals: [],
+          signals_evidence: {},
+          company_id: s.company_id,
+          company_name: s.company?.name || "",
+          company_ticker: s.company?.ticker || "",
+          country: s.company?.country || "",
+          sector: s.company?.sector || "Unclassified",
+          equity_value_usd: 0,
+          priority_score: 0,
+          priority_tier: "p3",
+          evidence_ids: s.evidence_ids || [],
+          evidence: s.evidence || [],
+          explanation: s.explanation || null,
+          explanation_cites: [],
+          first_seen_at: s.created_at,
+          last_updated_at: s.created_at,
+          score_delta: null,
+          extras: s.extras || {},
+          kind: s.kind || "company",
+          review_state: s.review_state || "pending",
+        })) as SituationV2[];
+      }
+
+      if (showHeatmap) {
+        h = await api.heatmap(module).catch(() => []);
+      }
+
       setItems(list);
       setHeat(h);
       if (list.length && !selected) setSelected(list[0]);
