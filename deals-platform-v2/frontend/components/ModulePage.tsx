@@ -51,35 +51,21 @@ export function ModulePage({
         list = result.situations || [];
       } else {
         const v1Situations = await api.situations({ module: apiModule, limit: 100 });
-        // Convert v1 SituationOut to SituationV2 format for display
+        // Convert v1 SituationOut to v2 display format
         list = v1Situations.map(s => ({
           id: s.id,
           module: s.module,
-          title: s.title,
-          summary: s.summary,
-          score: s.score,
-          confidence: s.confidence,
-          tier: "p3",
-          signals: [],
-          signals_evidence: {},
           company_id: s.company_id,
-          company_name: s.company?.name || "",
-          company_ticker: s.company?.ticker || "",
-          country: s.company?.country || "",
-          sector: s.company?.sector || "Unclassified",
-          equity_value_usd: 0,
-          priority_score: 0,
-          priority_tier: "p3",
-          evidence_ids: s.evidence_ids || [],
-          evidence: s.evidence || [],
+          company: undefined, // v1 doesn't have company object; would need separate fetch
+          tier: "p3",
+          tier_colour: "green" as const,
+          score: s.score,
+          score_delta: 0,
+          signals: {},
+          first_seen_at: null,
+          last_updated_at: null,
           explanation: s.explanation || null,
-          explanation_cites: [],
-          first_seen_at: s.created_at,
-          last_updated_at: s.created_at,
-          score_delta: null,
-          extras: s.extras || {},
-          kind: s.kind || "company",
-          review_state: s.review_state || "pending",
+          caveats: s.caveats || [],
         })) as SituationV2[];
       }
 
