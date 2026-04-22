@@ -2,11 +2,13 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { BandChart } from "@/components/BandChart";
-import { ModulePage } from "@/components/ModulePage";
+import { SituationCard } from "@/components/SituationCard";
+import { SituationDetail } from "@/components/SituationDetail";
+import type { SituationOut } from "@/lib/types";
 
 type KpiRow = Awaited<ReturnType<typeof api.postDealKpis>>[number];
 
-function Bands() {
+function Bands({ onRecompute }: { onRecompute?: () => void }) {
   const [rows, setRows] = useState<KpiRow[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -33,6 +35,7 @@ function Bands() {
     try {
       await api.postDealCompute();
       await load();
+      onRecompute?.();
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : "compute failed");
     } finally {
@@ -91,13 +94,82 @@ function Bands() {
 }
 
 export default function Page() {
+  const [items, setItems] = useState<SituationOut[]>([]);
+  const [selected, setSelected] = useState<SituationOut | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const load = async () => {
+    setLoading(true);
+    setErr(null);
+    try {
+      const list = await api.situations({ module: "post_deal", limit: 100 });
+      setItems(list);
+      if (list.length && !selected) setSelected(list[0]);
+      if (list.length === 0) setSelected(null);
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "load failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const onUpdated = (u: SituationOut) => {
+    setItems((prev) => prev.map((s) => (s.id === u.id ? u : s)));
+    setSelected(u);
+  };
+
   return (
-    <ModulePage
-      module="post_deal"
-      title="CS3 — Post-Deal Value Creation Tracker"
-      subtitle="Uploaded deal cases with trend-shaped target bands (linear / S-curve / J-curve). Deviations are flagged after two consecutive out-of-band observations."
-      showHeatmap={false}
-      aboveList={<Bands />}
-    />
+    <div className="p-6 space-y-4">
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-neutral-white">
+            CS3 — Post-Deal Value Creation Tracker
+          </h1>
+          <p className="text-sm text-neutral-light-tertiary mt-1 max-w-2xl">
+            Uploaded deal cases with trend-shaped target bands (linear / S-curve / J-curve).
+            Deviations are flagged after two consecutive out-of-band observations.
+          </p>
+        </div>
+        <button className="btn" onClick={load} disabled={loading}>
+          {loading ? "Loading…" : "↻ Reload list"}
+        </button>
+      </div>
+      {err && <div className="panel p-3 text-sm text-data-red">{err}</div>}
+
+      <Bands onRecompute={load} />
+
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+        <div className="lg:col-span-2 space-y-2">
+          <div className="text-sm font-semibold text-neutral-white">
+            Ranked situations ({items.length})
+          </div>
+          <div className="text-xs text-neutral-dark-tertiary">
+            All opportunities ranked by score.
+          </div>
+          {items.length === 0 && !loading && (
+            <div className="panel p-3 text-sm text-neutral-dark-tertiary">
+              No situations yet. Click &ldquo;Recompute deviations&rdquo; above to detect out-of-band KPIs.
+            </div>
+          )}
+          {items.map((s) => (
+            <SituationCard
+              key={s.id}
+              s={s}
+              active={selected?.id === s.id}
+              onSelect={setSelected}
+            />
+          ))}
+        </div>
+        <div className="lg:col-span-3">
+          <SituationDetail s={selected} onChange={onUpdated} />
+        </div>
+      </div>
+    </div>
   );
 }
