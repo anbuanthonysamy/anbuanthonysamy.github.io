@@ -62,14 +62,17 @@ def list_situations(
     tier: Optional[str] = Query(None, description="Filter by tier"),
     new_since: Optional[str] = Query(None, description="ISO timestamp"),
     sort_by: str = Query("score", description="priority | value | score | recency"),
-    limit: int = Query(15, le=100, description="Limit results; default 15 for manageable rankings"),
+    limit: Optional[int] = Query(None, description="Limit results; default 15 for CS1/CS2, unlimited for CS3/CS4"),
     offset: int = Query(0, ge=0),
     min_score: Optional[float] = Query(None, description="Minimum score threshold (0-1)"),
 ) -> dict:
-    """List situations with filters, sorting, and score thresholds.
+    """List situations with filters, sorting, and configurable thresholds.
 
-    Default behavior: show top 15 highest-scoring situations per module above minimum thresholds.
-    This prevents empty lists while avoiding analysis paralysis from too many opportunities.
+    Ranking strategy:
+    - CS1/CS2: Top 15 by score (deal value as tiebreaker)
+    - CS3/CS4: All opportunities by score (no limit)
+
+    This prevents analysis paralysis while surfacing all viable opportunities.
     """
     db = SessionLocal()
     try:
@@ -86,7 +89,7 @@ def list_situations(
             query = query.filter((Company.market_cap_usd >= 750_000_000) | (Company.market_cap_usd.is_(None)))
 
         # Score threshold (avoid low-quality opportunities)
-        score_threshold = min_score or 0.25  # Only show opportunities with >0.25 probability
+        score_threshold = min_score or 0.25
         query = query.filter(Situation.score >= score_threshold)
 
         if tier:
@@ -98,19 +101,28 @@ def list_situations(
             except ValueError:
                 pass
 
-        # Default sorting by score (highest first = best opportunities)
-        # This ensures top-ranked items appear first regardless of sort_by parameter
+        # Sorting with deal value as secondary factor for CS1/CS2
         if sort_by == "priority":
-            query = query.order_by(Situation.tier).order_by(Situation.score.desc())
+            query = query.order_by(Situation.tier).order_by(Situation.score.desc()).order_by(Company.market_cap_usd.desc().nullslast())
         elif sort_by == "value":
             query = query.order_by(Company.market_cap_usd.desc().nullslast())
         elif sort_by == "recency":
             query = query.order_by(Situation.last_updated_at.desc())
         else:  # score (default)
-            query = query.order_by(Situation.score.desc())
+            # Primary: score (desc), Secondary: deal value (desc) for tie-breaking
+            query = query.order_by(Situation.score.desc()).order_by(Company.market_cap_usd.desc().nullslast())
 
         total = query.count()
-        situations = query.limit(limit).offset(offset).all()
+
+        # Module-specific limit: CS1/CS2 top 15, CS3/CS4 all
+        effective_limit = limit
+        if effective_limit is None:
+            if module in ("origination", "carve_outs"):
+                effective_limit = 15
+            else:  # CS3, CS4 - show all
+                effective_limit = 500
+
+        situations = query.limit(effective_limit).offset(offset).all()
 
         # Build company lookup for efficient access
         company_ids = {s.company_id for s in situations if s.company_id}
@@ -118,14 +130,14 @@ def list_situations(
 
         return {
             "total": total,
-            "limit": limit,
+            "limit": effective_limit,
             "offset": offset,
             "score_threshold": score_threshold,
             "situations": [
                 {
                     "id": s.id,
                     "module": s.module,
-                    "rank": offset + idx + 1,  # Explicit ranking (1-based)
+                    "rank": offset + idx + 1,
                     "tier": s.tier,
                     "tier_colour": s.tier_colour,
                     "score": s.score,
