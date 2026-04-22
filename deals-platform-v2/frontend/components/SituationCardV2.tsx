@@ -15,6 +15,20 @@ function tierToColour(tier: string | null): "red" | "amber" | "green" {
   return "green";
 }
 
+function countryToFlag(country: string | null): string {
+  if (!country) return "";
+  if (country.toUpperCase() === "US") return "🇺🇸";
+  if (country.toUpperCase() === "UK" || country.toUpperCase() === "GB") return "🇬🇧";
+  return "";
+}
+
+function formatEquityValue(value: number | null): string {
+  if (!value) return "";
+  if (value >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(1)}B`;
+  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(0)}M`;
+  return `$${value.toFixed(0)}`;
+}
+
 const colours: Record<string, Record<string, string>> = {
   red: {
     bg: "bg-red-900/20",
@@ -64,12 +78,29 @@ export function SituationCardV2({
               {situation.score.toFixed(2)}
             </span>
           </div>
-          <p className="text-sm font-medium text-neutral-white mt-1">
-            {situation.company?.name || "Unknown"}
-          </p>
-          <p className="text-xs text-neutral-light-tertiary mt-1">
-            {situation.module.toUpperCase()}
-          </p>
+          <div className="flex items-center gap-1 mt-1">
+            <p className="text-sm font-medium text-neutral-white">
+              {situation.company?.name || "Unknown"}
+            </p>
+            {situation.company?.country && (
+              <span className="text-sm">{countryToFlag(situation.company.country)}</span>
+            )}
+          </div>
+          <div className="flex items-center gap-2 mt-1 text-xs text-neutral-light-tertiary">
+            <span>{situation.module.toUpperCase()}</span>
+            {situation.company?.equity_value && (
+              <>
+                <span>•</span>
+                <span className="font-mono">{formatEquityValue(situation.company.equity_value)}</span>
+              </>
+            )}
+            {situation.company?.sector && (
+              <>
+                <span>•</span>
+                <span>{situation.company.sector}</span>
+              </>
+            )}
+          </div>
         </div>
         {situation.score_delta !== 0 && (
           <div className="text-right text-xs">

@@ -73,6 +73,13 @@ def list_situations(
         # Filters
         if module:
             query = query.filter(Situation.module == module)
+
+        # Equity value thresholds per module
+        if module == "origination":
+            query = query.filter((Company.market_cap_usd >= 1_000_000_000) | (Company.market_cap_usd.is_(None)))
+        elif module == "carve-outs":
+            query = query.filter((Company.market_cap_usd >= 750_000_000) | (Company.market_cap_usd.is_(None)))
+
         if tier:
             query = query.filter(Situation.tier == tier)
         if new_since:
@@ -116,10 +123,15 @@ def list_situations(
                     "first_seen_at": s.first_seen_at.isoformat() if s.first_seen_at else None,
                     "last_updated_at": s.last_updated_at.isoformat() if s.last_updated_at else None,
                     "company_id": s.company_id,
-                    "company_name": companies.get(s.company_id, {}).name if s.company_id and s.company_id in companies else "Unknown",
-                    "company_sector": companies.get(s.company_id, {}).sector if s.company_id and s.company_id in companies else None,
-                    "company_country": companies.get(s.company_id, {}).country if s.company_id and s.company_id in companies else None,
-                    "company_source": "Companies House" if (companies.get(s.company_id, {}).country == "UK" if s.company_id and s.company_id in companies else False) else "S&P 500",
+                    "company": {
+                        "id": companies[s.company_id].id if s.company_id and s.company_id in companies else None,
+                        "name": companies[s.company_id].name if s.company_id and s.company_id in companies else "Unknown",
+                        "ticker": companies[s.company_id].ticker if s.company_id and s.company_id in companies else None,
+                        "sector": companies[s.company_id].sector if s.company_id and s.company_id in companies else None,
+                        "country": companies[s.company_id].country if s.company_id and s.company_id in companies else None,
+                        "market_cap_usd": companies[s.company_id].market_cap_usd if s.company_id and s.company_id in companies else None,
+                        "equity_value": companies[s.company_id].equity_value if s.company_id and s.company_id in companies else None,
+                    },
                     "signals": s.signals,
                 }
                 for s in situations
@@ -134,6 +146,8 @@ def get_situation(
     situation_id: str,
 ) -> dict:
     """Get a single situation with details."""
+    from app.shared.source_status import TRACKER
+
     db = SessionLocal()
     try:
         situation = db.query(Situation).filter(Situation.id == situation_id).first()
@@ -142,14 +156,22 @@ def get_situation(
 
         company = db.query(Company).filter(Company.id == situation.company_id).first() if situation.company_id else None
 
+        # Get source status for this module
+        source_status = TRACKER.module_report(situation.module)
+
         return {
             "id": situation.id,
             "module": situation.module,
             "company_id": situation.company_id,
-            "company_name": company.name if company else "Unknown",
-            "company_sector": company.sector if company else None,
-            "company_country": company.country if company else None,
-            "company_source": "Companies House" if (company and company.country == "UK") else "S&P 500",
+            "company": {
+                "id": company.id if company else None,
+                "name": company.name if company else "Unknown",
+                "ticker": company.ticker if company else None,
+                "sector": company.sector if company else None,
+                "country": company.country if company else None,
+                "market_cap_usd": company.market_cap_usd if company else None,
+                "equity_value": company.equity_value if company else None,
+            },
             "tier": situation.tier,
             "tier_colour": situation.tier_colour,
             "score": situation.score,
@@ -159,6 +181,7 @@ def get_situation(
             "last_updated_at": situation.last_updated_at.isoformat() if situation.last_updated_at else None,
             "explanation": situation.explanation,
             "caveats": situation.caveats,
+            "source_status": source_status,
         }
     finally:
         db.close()
@@ -169,6 +192,8 @@ async def generate_explanation_on_demand(
     situation_id: str,
 ) -> dict:
     """Generate LLM explanation for a situation on-demand."""
+    from app.explain.explainer import generate_explanation
+
     db = SessionLocal()
     try:
         situation = db.query(Situation).filter(Situation.id == situation_id).first()
@@ -182,12 +207,27 @@ async def generate_explanation_on_demand(
                 "cached": True,
             }
 
-        # TODO: Call LLM to generate explanation based on signals
-        # For now, return stub
+        # Generate explanation using LLM (or offline synthesis)
+        explanation, cited_ids = generate_explanation(
+            db,
+            title=f"{situation.module.upper()} situation",
+            dimensions=situation.dimensions or {},
+            evidence_ids=situation.evidence_ids or [],
+        )
+
+        # Update situation with generated explanation
+        situation.explanation = explanation
+        db.commit()
+
         return {
             "id": situation.id,
-            "explanation": "On-demand explanation generation not yet implemented",
+            "explanation": explanation,
             "cached": False,
+        }
+    except Exception as e:
+        log.error(f"Failed to generate explanation for {situation_id}: {e}")
+        return {
+            "error": f"Failed to generate explanation: {str(e)}"
         }
     finally:
         db.close()
