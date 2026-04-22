@@ -58,18 +58,23 @@ def seed_companies(universe: str = "seed", db: Session = None) -> int:
         added = 0
 
         for company_data in companies_data:
-            # Check if company already exists by ticker
+            existing = None
             if company_data.get("ticker"):
                 existing = db.query(Company).filter(
                     Company.ticker == company_data["ticker"]
                 ).first()
-                if existing:
-                    continue
 
-            # Create company
-            company = Company(**company_data)
-            db.add(company)
-            added += 1
+            if existing:
+                # Upsert: update fixture-sourced fields so fixture corrections
+                # (e.g. a corrected CIK) take effect without requiring a DB drop.
+                for field in ("cik", "name", "sector", "country", "market_cap_usd"):
+                    new_val = company_data.get(field)
+                    if new_val is not None and getattr(existing, field, None) != new_val:
+                        setattr(existing, field, new_val)
+            else:
+                company = Company(**company_data)
+                db.add(company)
+                added += 1
 
         db.commit()
         return added

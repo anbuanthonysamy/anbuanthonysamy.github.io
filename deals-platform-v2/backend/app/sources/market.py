@@ -13,25 +13,54 @@ from app.sources.base import RawItem, Source
 log = logging.getLogger(__name__)
 
 
+def _yahoo_ticker(ticker: str, country: str | None = None) -> str:
+    """Convert our stored ticker to the form Yahoo Finance expects.
+
+    - US tickers with a dot class share (BRK.B) use a dash on Yahoo (BRK-B).
+    - UK tickers need the London exchange suffix (.L). HSBC's LSE listing
+      is HSBA, not HSBC, so we translate that explicitly.
+    """
+    t = ticker.strip().upper()
+    if country and country.upper() == "UK":
+        uk_map = {"HSBC": "HSBA", "ASZA": "AZN"}
+        t = uk_map.get(t, t)
+        if not t.endswith(".L"):
+            t = f"{t}.L"
+        return t
+    # US dot-class shares (e.g. BRK.B) use a dash on Yahoo
+    if "." in t and not t.endswith(".L"):
+        t = t.replace(".", "-")
+    return t
+
+
 class YFinanceMarket(Source):
     id = "market.yfinance"
     name = "Yahoo Finance (yfinance)"
     scope = DataScope.PUBLIC
 
-    def fetch(self, ticker: str, sector: str | None = None, api_mode: str = "live", **_: object) -> list[RawItem]:
+    def fetch(
+        self,
+        ticker: str,
+        sector: str | None = None,
+        country: str | None = None,
+        api_mode: str = "live",
+        **_: object,
+    ) -> list[RawItem]:
         """Fetch market data and compute underperformance vs sector.
 
         Args:
-            ticker: Stock ticker (e.g., 'AAPL')
+            ticker: Stock ticker (e.g., 'AAPL', 'ULVR', 'BRK.B')
             sector: Industry sector for comparison (e.g., 'Information Technology')
+            country: Company country ('US' or 'UK') — used to format the ticker
             api_mode: 'live' (must fetch real data, raise on error) or 'offline' (use fixtures)
         """
         s = get_settings()
         mode = SourceMode.LIVE
+        yahoo_symbol = _yahoo_ticker(ticker, country)
         try:
             import yfinance  # type: ignore
 
-            t = yfinance.Ticker(ticker)
+            t = yfinance.Ticker(yahoo_symbol)
             info = t.fast_info
             mcap = float(getattr(info, "market_cap", 0) or 0)
             price = float(getattr(info, "last_price", 0) or 0)

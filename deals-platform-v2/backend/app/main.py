@@ -54,25 +54,33 @@ def _check_db_empty() -> bool:
         db.close()
 
 
-def _trigger_initial_scan() -> None:
-    """Load S&P 500/FTSE 100 companies and run initial scan in background."""
+def _seed_and_scan(is_empty: bool) -> None:
+    """Seed/refresh company fixture data, then trigger a scan if first run.
+
+    The seed is idempotent (upsert) so corrections to the fixture (e.g. a
+    corrected CIK) flow through on every restart without needing to drop
+    the database.
+    """
     db = SessionLocal()
     try:
-        log.info("Database is empty. Loading S&P 500 + FTSE 100 companies...")
-        count = seed_sp500_ftse100(db=db)
-        log.info(f"Loaded {count} companies from S&P 500 + FTSE 100")
+        log.info("Refreshing S&P 500 + FTSE 100 company fixture (upsert)...")
+        added = seed_sp500_ftse100(db=db)
+        log.info(f"Seed complete: {added} new companies added, existing rows updated")
 
-        log.info("Triggering initial scan with live data...")
-        # Run async function in a new event loop
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        try:
-            loop.run_until_complete(run_full_scan(db, api_mode="live"))
-            log.info("Initial scan completed")
-        finally:
-            loop.close()
+        if is_empty:
+            log.info("Database was empty — triggering initial live scan...")
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                loop.run_until_complete(run_full_scan(db, api_mode="live"))
+                log.info("Initial scan completed")
+            finally:
+                loop.close()
+        else:
+            log.info("Database already populated — skipping initial scan "
+                     "(trigger manually via POST /api/v2/scan/run)")
     except Exception as e:
-        log.error(f"Initial scan failed: {e}")
+        log.error(f"Seed/initial scan failed: {e}")
     finally:
         db.close()
 
@@ -82,13 +90,9 @@ def _startup() -> None:
     init_db()
     log.info("DB initialised")
 
-    # Check if database is empty and trigger initial scan with live data
-    if _check_db_empty():
-        # Run scan in background thread so startup completes quickly
-        scan_thread = Thread(target=_trigger_initial_scan, daemon=False)
-        scan_thread.start()
-    else:
-        log.info("Database has existing companies, skipping initial scan")
+    is_empty = _check_db_empty()
+    # Run in a background thread so startup completes quickly.
+    Thread(target=_seed_and_scan, args=(is_empty,), daemon=False).start()
 
     if settings.enable_scheduler:
         sched = build_scheduler()

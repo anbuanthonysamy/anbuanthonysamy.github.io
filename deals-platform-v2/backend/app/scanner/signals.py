@@ -79,108 +79,146 @@ async def _fetch_with_tracking(
 async def cs1_signal_scorer(
     company: Company, api_mode: str, db: Session
 ) -> tuple[float, dict]:
-    """Score CS1 M&A origination signals (deterministic, API-driven)."""
-    signals = {}
+    """Score CS1 M&A origination signals (deterministic, API-driven).
 
-    # Fetch live data from sources if available
-    try:
-        # Get EDGAR company facts (consolidated financials)
-        edgar_facts = BY_ID.get("edgar.xbrl_companyfacts")
-        facts_meta = {}
-        if edgar_facts and company.cik:
-            facts_items = await _fetch_with_tracking(
-                "origination", "edgar.xbrl_companyfacts", api_mode,
-                edgar_facts.fetch, cik=company.cik, company_name=company.name,
-            )
-            if facts_items:
+    Each data source fetches and computes independently. If a source fails,
+    only the signals derived from that source are missing — other signals
+    still compute from their own live data. Missing signals default to 0
+    rather than being replaced with stub values.
+    """
+    signals: dict = {
+        # Sane defaults — overwritten only when real data is available
+        "market_underperformance_pct": 0.0,
+        "pe_discount_pct": 0.0,
+        "margin_compression_pct": 0.0,
+        "fresh_leadership_change": False,
+        "leadership_change_score": 0.0,
+        "leadership_changes": 0,
+        "active_13d_filing": False,
+        "activist_signal_strength": 0.0,
+        "net_debt_ebitda": 0.0,
+        "leverage_stress": False,
+    }
+
+    # Fetches: each source is independent. _fetch_with_tracking catches
+    # source-level errors and records them in the status tracker.
+    facts_meta: dict = {}
+    edgar_facts = BY_ID.get("edgar.xbrl_companyfacts")
+    if edgar_facts and company.cik:
+        facts_items = await _fetch_with_tracking(
+            "origination", "edgar.xbrl_companyfacts", api_mode,
+            edgar_facts.fetch, cik=company.cik, company_name=company.name,
+        )
+        if facts_items:
+            try:
                 facts_meta = _extract_financial_metrics(facts_items)
+            except Exception as e:
+                log.warning("CS1 extract financials failed for %s: %s", company.ticker, e)
 
-        # Get market data (for valuation and trend analysis)
-        market = BY_ID.get("market.yfinance")
-        market_meta = {}
-        if market and company.ticker:
-            market_items = await _fetch_with_tracking(
-                "origination", "market.yfinance", api_mode,
-                market.fetch, ticker=company.ticker, sector=company.sector,
-            )
-            if market_items:
+    market_meta: dict = {}
+    market = BY_ID.get("market.yfinance")
+    if market and company.ticker:
+        market_items = await _fetch_with_tracking(
+            "origination", "market.yfinance", api_mode,
+            market.fetch, ticker=company.ticker, sector=company.sector,
+            country=company.country,
+        )
+        if market_items:
+            try:
                 market_meta = _extract_market_metrics(market_items)
+            except Exception as e:
+                log.warning("CS1 extract market failed for %s: %s", company.ticker, e)
 
-        # Get news/filings (for catalyst signals)
-        edgar_submissions = BY_ID.get("edgar.submissions")
-        filings = []
-        if edgar_submissions and company.cik:
-            filing_items = await _fetch_with_tracking(
-                "origination", "edgar.submissions", api_mode,
-                edgar_submissions.fetch, cik=company.cik, company_name=company.name,
-            )
-            if filing_items:
+    filings: list = []
+    edgar_submissions = BY_ID.get("edgar.submissions")
+    if edgar_submissions and company.cik:
+        filing_items = await _fetch_with_tracking(
+            "origination", "edgar.submissions", api_mode,
+            edgar_submissions.fetch, cik=company.cik, company_name=company.name,
+        )
+        if filing_items:
+            try:
                 filings = [item for item in filing_items if item.kind == "filing_13d"]
+            except Exception as e:
+                log.warning("CS1 filings filter failed for %s: %s", company.ticker, e)
 
-        # 1. Market & Valuation: stock underperformance vs peers
-        underperformance_pct = market_meta.get("underperformance_vs_sector", 0.0)
-        signals["market_underperformance_pct"] = underperformance_pct
+    # Signal computations — each in its own guard so one failure doesn't
+    # prevent other signals from being derived.
 
-        # 2. PE multiple discount vs sector median (using helper)
-        company_pe = market_meta.get("pe_ratio", 0)
+    # 1. Market underperformance vs peers (market.yfinance)
+    try:
+        signals["market_underperformance_pct"] = float(
+            market_meta.get("underperformance_vs_sector", 0.0) or 0.0
+        )
+    except Exception as e:
+        log.warning("CS1 underperformance calc failed for %s: %s", company.ticker, e)
+
+    # 2. PE multiple discount vs sector median (market.yfinance + sector medians)
+    try:
+        company_pe = float(market_meta.get("pe_ratio", 0) or 0)
         sector_pe = _get_sector_median_pe(company.sector or "")
-        pe_discount = calculate_pe_discount(company_pe, sector_pe)
-        signals["pe_discount_pct"] = pe_discount
+        signals["pe_discount_pct"] = calculate_pe_discount(company_pe, sector_pe)
+    except Exception as e:
+        log.warning("CS1 pe_discount calc failed for %s: %s", company.ticker, e)
 
-        # 3. Strategic performance: margin compression (using helper)
-        current_revenue = facts_meta.get("revenue", {}).get("val", 0)
-        current_oi = facts_meta.get("oi", {}).get("val", 0)
-        margin_compression = calculate_margin_compression(current_oi, current_revenue)
-        signals["margin_compression_pct"] = margin_compression
+    # 3. Margin compression (edgar.xbrl_companyfacts)
+    try:
+        current_revenue = facts_meta.get("revenue", {}).get("val", 0) or 0
+        current_oi = facts_meta.get("oi", {}).get("val", 0) or 0
+        signals["margin_compression_pct"] = calculate_margin_compression(
+            current_oi, current_revenue
+        )
+    except Exception as e:
+        log.warning("CS1 margin_compression calc failed for %s: %s", company.ticker, e)
 
-        # 4. Leadership changes (13D filings + Tier 4: 8-K/news detection)
-        leadership_change = len(filings) > 0
-        signals["fresh_leadership_change"] = leadership_change
-
-        # Tier 4: Detect leadership changes from filings and news
+    # 4. Leadership changes (edgar.submissions + tier4 news detection)
+    try:
+        signals["fresh_leadership_change"] = len(filings) > 0
         leadership_change_score, leadership_changes = detect_leadership_changes(
             filing_items=filings,
-            news_items=[],  # Would fetch from news source if available
+            news_items=[],
             days_lookback=180,
         )
         signals["leadership_change_score"] = leadership_change_score
         signals["leadership_changes"] = len(leadership_changes)
+    except Exception as e:
+        log.warning("CS1 leadership calc failed for %s: %s", company.ticker, e)
 
-        # 5. Activist involvement (using helper)
+    # 5. Activist involvement (edgar.submissions SC 13D)
+    try:
         activist_signal = 0.0
         if filings:
-            # Find most recent 13D filing
-            recent_13d = next((f for f in filings if f.meta and f.meta.get("form") == "SC 13D"), None)
+            recent_13d = next(
+                (f for f in filings if f.meta and f.meta.get("form") == "SC 13D"),
+                None,
+            )
             if recent_13d and recent_13d.published_at:
-                days_since = (datetime.now(datetime.now().astimezone().tzinfo) - recent_13d.published_at).days
+                now_aware = datetime.now(recent_13d.published_at.tzinfo)
+                days_since = (now_aware - recent_13d.published_at).days
+                filing_count_6m = sum(
+                    1 for f in filings
+                    if f.published_at and (now_aware - f.published_at).days < 180
+                )
                 activist_signal = score_activist_signal(
                     days_since_13d=days_since,
-                    filing_count_6m=len([f for f in filings if f.published_at and
-                                        (datetime.now(datetime.now().astimezone().tzinfo) - f.published_at).days < 180])
+                    filing_count_6m=filing_count_6m,
                 )
         signals["active_13d_filing"] = activist_signal > 0.3
         signals["activist_signal_strength"] = activist_signal
+    except Exception as e:
+        log.warning("CS1 activist calc failed for %s: %s", company.ticker, e)
 
-        # 6. Leverage stress: Net Debt / EBITDA ratio (using helper)
-        debt_val = facts_meta.get("debt", {}).get("val", 0)
-        oi_val = facts_meta.get("oi", {}).get("val", 0)
+    # 6. Leverage stress: Net Debt / EBITDA (edgar.xbrl_companyfacts)
+    try:
+        debt_val = facts_meta.get("debt", {}).get("val", 0) or 0
+        oi_val = facts_meta.get("oi", {}).get("val", 0) or 0
         leverage, leverage_stressed = calculate_leverage_stress(debt_val, oi_val)
         signals["net_debt_ebitda"] = leverage
         signals["leverage_stress"] = leverage_stressed
-
     except Exception as e:
-        log.warning(f"Error fetching live signals for {company.ticker}: {e}")
-        # Fallback to stub values if live fetch fails
-        signals = {
-            "market_underperformance_pct": 12.0,
-            "pe_discount_pct": 15.0,
-            "margin_compression_pct": 8.0,
-            "fresh_leadership_change": False,
-            "active_13d_filing": False,
-            "net_debt_ebitda": 2.8,
-        }
+        log.warning("CS1 leverage calc failed for %s: %s", company.ticker, e)
 
-    # Composite score
+    # Composite score — only uses signals that actually had data
     score = _score_cs1_composite(signals)
 
     return score, signals
@@ -190,98 +228,152 @@ async def cs2_signal_scorer(
     company: Company, api_mode: str, db: Session
 ) -> tuple[float, dict]:
     """Score CS2 carve-out signals (deterministic, API-driven)."""
-    signals = {}
+    equity_value_default = getattr(company, "market_cap_usd", None) or 1e9
+    signals: dict = {
+        # Sane defaults — overwritten only when real data is available
+        "balance_sheet_stress": False,
+        "balance_sheet_stress_score": 0.0,
+        "segment_underperformance": 0.0,
+        "conglomerate_discount_pct": 0.0,
+        "separation_readiness": 0.0,
+        "capital_stress_signals": False,
+        "capital_stress_score": 0.0,
+        "margin_trend_score": 0.0,
+        "margin_trend_direction": "unknown",
+        "breakup_call_signal": 0.0,
+        "has_breakup_activist_call": False,
+        "peer_precedent_signal": 0.0,
+        "similar_divestments": 0,
+        "separation_probability": 0.0,
+        "estimated_deal_value_usd": 0.0,
+        "acquisition_premium_usd": 0.0,
+        "_equity_value_usd": equity_value_default,
+        "_separation_readiness_cached": 0.0,
+        "_separation_probability_cached": 0.0,
+    }
 
-    try:
-        # Get segment-level facts from EDGAR
-        segment_facts = BY_ID.get("edgar.xbrl_segment_facts")
-        segment_meta = {}
-        if segment_facts and company.cik:
-            segment_items = await _fetch_with_tracking(
-                "carve_outs", "edgar.xbrl_segment_facts", api_mode,
-                segment_facts.fetch, cik=company.cik, company_name=company.name,
-            )
-            if segment_items:
+    # Fetches: each source is independent.
+    segment_meta: dict = {}
+    segment_facts = BY_ID.get("edgar.xbrl_segment_facts")
+    if segment_facts and company.cik:
+        segment_items = await _fetch_with_tracking(
+            "carve_outs", "edgar.xbrl_segment_facts", api_mode,
+            segment_facts.fetch, cik=company.cik, company_name=company.name,
+        )
+        if segment_items:
+            try:
                 segment_meta = _extract_segment_metrics(segment_items)
+            except Exception as e:
+                log.warning("CS2 extract segments failed for %s: %s", company.ticker, e)
 
-        # Get company facts for debt analysis
-        edgar_facts = BY_ID.get("edgar.xbrl_companyfacts")
-        facts_meta = {}
-        if edgar_facts and company.cik:
-            facts_items = await _fetch_with_tracking(
-                "carve_outs", "edgar.xbrl_companyfacts", api_mode,
-                edgar_facts.fetch, cik=company.cik, company_name=company.name,
-            )
-            if facts_items:
+    facts_meta: dict = {}
+    edgar_facts = BY_ID.get("edgar.xbrl_companyfacts")
+    if edgar_facts and company.cik:
+        facts_items = await _fetch_with_tracking(
+            "carve_outs", "edgar.xbrl_companyfacts", api_mode,
+            edgar_facts.fetch, cik=company.cik, company_name=company.name,
+        )
+        if facts_items:
+            try:
                 facts_meta = _extract_financial_metrics(facts_items)
+            except Exception as e:
+                log.warning("CS2 extract financials failed for %s: %s", company.ticker, e)
 
-        # Market data (underperformance + peer valuation)
-        market = BY_ID.get("market.yfinance")
-        if market and company.ticker:
-            await _fetch_with_tracking(
-                "carve_outs", "market.yfinance", api_mode,
-                market.fetch, ticker=company.ticker, sector=company.sector,
-            )
+    market = BY_ID.get("market.yfinance")
+    if market and company.ticker:
+        await _fetch_with_tracking(
+            "carve_outs", "market.yfinance", api_mode,
+            market.fetch, ticker=company.ticker, sector=company.sector,
+            country=company.country,
+        )
 
-        # 1. Balance sheet stress: Net debt escalation (using helper)
-        debt_val = facts_meta.get("debt", {}).get("val", 0)
-        oi_val = facts_meta.get("oi", {}).get("val", 0)
-        current_revenue = facts_meta.get("revenue", {}).get("val", 0)
-        current_oi = oi_val
+    # Signal computations — each in its own guard.
+    debt_stress_score = 0.0
+    debt_val = facts_meta.get("debt", {}).get("val", 0) or 0
+    oi_val = facts_meta.get("oi", {}).get("val", 0) or 0
+    current_revenue = facts_meta.get("revenue", {}).get("val", 0) or 0
+
+    # 1. Balance sheet stress
+    try:
         ebitda = oi_val * 1.2 if oi_val else 1.0
-        debt_stress_score, debt_stress_bool = calculate_balance_sheet_stress(debt_val, current_ebitda=ebitda)
+        debt_stress_score, debt_stress_bool = calculate_balance_sheet_stress(
+            debt_val, current_ebitda=ebitda
+        )
         signals["balance_sheet_stress"] = debt_stress_bool
         signals["balance_sheet_stress_score"] = debt_stress_score
+    except Exception as e:
+        log.warning("CS2 balance_sheet calc failed for %s: %s", company.ticker, e)
 
-        # 2. Segment underperformance (using helper)
-        segment_count = segment_meta.get("segment_count", 1)
-        segment_perf = 0.0
+    # 2. Segment underperformance
+    segment_count = 1
+    try:
+        segment_count = segment_meta.get("segment_count", 1) or 1
         if segment_count > 1 and segment_meta.get("has_multiple_segments"):
-            # If we have segment data, compute actual margin gap
-            # For now, use estimated value from segment extraction
-            segment_perf = segment_meta.get("segment_underperformance", 0.25)
-        signals["segment_underperformance"] = segment_perf
+            signals["segment_underperformance"] = segment_meta.get(
+                "segment_underperformance", 0.25
+            )
+    except Exception as e:
+        log.warning("CS2 segment calc failed for %s: %s", company.ticker, e)
 
-        # 3. Portfolio complexity: Conglomerate discount (using helper)
-        revenue_concentration = 1.0 / max(segment_count, 1)  # 1 = single segment, <1 = diversified
-        discount = calculate_conglomerate_discount(
+    # 3. Conglomerate discount
+    try:
+        revenue_concentration = 1.0 / max(segment_count, 1)
+        signals["conglomerate_discount_pct"] = calculate_conglomerate_discount(
             segment_count=segment_count,
             revenue_concentration=revenue_concentration,
             sector_diversity=max(1, segment_count - 1),
         )
-        signals["conglomerate_discount_pct"] = discount
+    except Exception as e:
+        log.warning("CS2 conglomerate_discount calc failed for %s: %s", company.ticker, e)
 
-        # 4. Separation feasibility (using helper)
+    # 4. Separation feasibility
+    feasibility = 0.0
+    try:
         feasibility = calculate_separation_readiness(
-            years_of_segment_reporting=3,  # Assume minimum 3 years based on data availability
+            years_of_segment_reporting=3 if segment_count > 1 else 0,
             segment_has_independent_ops=segment_count > 1,
-            segment_revenue_pct=50.0 / max(segment_count, 1),  # Rough estimate
+            segment_revenue_pct=50.0 / max(segment_count, 1),
             systems_independence_score=0.6 if segment_count > 1 else 0.3,
             contract_assignability_score=0.7,
             regulatory_barriers_score=0.8,
         )
         signals["separation_readiness"] = feasibility
+        signals["_separation_readiness_cached"] = feasibility
+    except Exception as e:
+        log.warning("CS2 separation_readiness calc failed for %s: %s", company.ticker, e)
 
-        # 5. Capital actions: Dividend suspension, equity issuance (using helper)
+    # 5. Capital actions
+    try:
         capital_stress_score, capital_actions = detect_capital_stress_actions()
         signals["capital_stress_signals"] = capital_actions
         signals["capital_stress_score"] = capital_stress_score
+    except Exception as e:
+        log.warning("CS2 capital_stress calc failed for %s: %s", company.ticker, e)
 
-        # Tier 3: Advanced analysis
-        # Margin trend analysis (3-year trajectory)
-        current_margin_pct = (current_oi / current_revenue * 100) if current_revenue else 0.0
+    # Tier 3: Margin trend
+    margin_trend_score = 0.0
+    try:
+        current_margin_pct = (oi_val / current_revenue * 100) if current_revenue else 0.0
         margin_trend_score, margin_trend_dir = calculate_margin_trend_3y(
             current_margin=current_margin_pct
         )
         signals["margin_trend_score"] = margin_trend_score
         signals["margin_trend_direction"] = margin_trend_dir
+    except Exception as e:
+        log.warning("CS2 margin_trend calc failed for %s: %s", company.ticker, e)
 
-        # Activist break-up call detection
+    # Tier 3: Activist break-up calls (no news source yet — default to empty)
+    breakup_signal = 0.0
+    try:
         breakup_signal, has_breakup_call = detect_activist_breakup_calls([])
         signals["breakup_call_signal"] = breakup_signal
         signals["has_breakup_activist_call"] = has_breakup_call
+    except Exception as e:
+        log.warning("CS2 breakup_calls calc failed for %s: %s", company.ticker, e)
 
-        # Peer divestment pattern detection
+    # Tier 3: Peer divestment patterns
+    peer_precedent = 0.0
+    try:
         peer_precedent, divested_divisions = detect_peer_divestment_patterns(
             company_sector=company.sector or "",
             company_name=company.name,
@@ -289,9 +381,12 @@ async def cs2_signal_scorer(
         )
         signals["peer_precedent_signal"] = peer_precedent
         signals["similar_divestments"] = len(divested_divisions)
+    except Exception as e:
+        log.warning("CS2 peer_divestment calc failed for %s: %s", company.ticker, e)
 
-        # Tier 3: Calculate separation probability
-        margin_stress = 1.0 - min(abs(margin_trend_score), 1.0)  # Normalize trend to stress signal
+    # Tier 3: Separation probability
+    try:
+        margin_stress = 1.0 - min(abs(margin_trend_score), 1.0)
         separation_prob = calculate_separation_probability(
             separation_readiness=feasibility,
             activist_signal=breakup_signal,
@@ -300,29 +395,19 @@ async def cs2_signal_scorer(
             debt_stress_signal=debt_stress_score,
         )
         signals["separation_probability"] = separation_prob
+        signals["_separation_probability_cached"] = separation_prob
+    except Exception as e:
+        log.warning("CS2 separation_probability calc failed for %s: %s", company.ticker, e)
 
-        # Deal value estimate (doesn't depend on composite score)
-        equity_value = getattr(company, "market_cap_usd", None) or 1e9
+    # Deal value estimate
+    try:
+        equity_value = getattr(company, "market_cap_usd", None) or equity_value_default
         deal_value, premium = calculate_deal_value_estimate(equity_value)
         signals["estimated_deal_value_usd"] = deal_value
         signals["acquisition_premium_usd"] = premium
         signals["_equity_value_usd"] = equity_value
-        signals["_separation_readiness_cached"] = feasibility
-        signals["_separation_probability_cached"] = separation_prob
-
     except Exception as e:
-        log.warning(f"Error fetching live signals for {company.ticker}: {e}")
-        # Fallback to stub values
-        signals = {
-            "balance_sheet_stress": False,
-            "segment_underperformance": 0.3,
-            "conglomerate_discount_pct": 12.0,
-            "separation_readiness": 0.65,
-            "capital_stress_signals": False,
-            "_equity_value_usd": getattr(company, "market_cap_usd", None) or 1e9,
-            "_separation_readiness_cached": 0.65,
-            "_separation_probability_cached": 0.0,
-        }
+        log.warning("CS2 deal_value calc failed for %s: %s", company.ticker, e)
 
     # Composite score
     score = _score_cs2_composite(signals)
