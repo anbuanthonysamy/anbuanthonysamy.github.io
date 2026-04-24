@@ -36,4 +36,4 @@ services:
     startCommand: npm start
     envVars:
       - key: NEXT_PUBLIC_BACKEND_URL
-        value: "https://backend-zlq.onrender.com"
+        value: "https://backend-z1qk.onrender.com"
