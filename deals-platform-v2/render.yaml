@@ -29,7 +29,7 @@ services:
         value: "https://deals-platform.onrender.com,http://localhost:3001"
 
   - type: web
-    name: frontend
+    name: deals-platform
     runtime: node
     rootDir: deals-platform-v2/frontend
     buildCommand: npm install && npm run build
