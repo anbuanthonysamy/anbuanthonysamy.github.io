@@ -9,7 +9,7 @@ services:
   - type: web
     name: backend
     runtime: python
-    rootDir: backend
+    rootDir: deals-platform-v2/backend
     buildCommand: pip install ".[live]"
     startCommand: poetry run uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
@@ -31,7 +31,7 @@ services:
   - type: web
     name: frontend
     runtime: node
-    rootDir: frontend
+    rootDir: deals-platform-v2/frontend
     buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
