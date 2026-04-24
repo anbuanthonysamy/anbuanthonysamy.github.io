@@ -26,10 +26,10 @@ services:
       - key: SEC_USER_AGENT
         value: "DealsPlatformPoC admin@example.com"
       - key: CORS_ORIGINS
-        value: "https://deals-platform.onrender.com,http://localhost:3001"
+        value: "https://deal-platform.onrender.com,http://localhost:3001"
 
   - type: web
-    name: deals-platform
+    name: deal-platform
     runtime: node
     rootDir: deals-platform-v2/frontend
     buildCommand: npm install && npm run build
