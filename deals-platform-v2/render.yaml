@@ -26,7 +26,7 @@ services:
       - key: SEC_USER_AGENT
         value: "DealsPlatformPoC admin@example.com"
       - key: CORS_ORIGINS
-        value: "https://deal-platform.onrender.com,http://localhost:3001"
+        value: "https://frontend-u478.onrender.com,http://localhost:3001"
 
   - type: web
     name: deal-platform
