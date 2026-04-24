@@ -1,0 +1,50 @@
+services:
+  - type: postgres
+    name: postgres
+    plan: starter
+    ipAllowList: []
+    envVars:
+      - key: POSTGRES_USER
+        value: deals
+      - key: POSTGRES_PASSWORD
+        generateValue: true
+      - key: POSTGRES_DB
+        value: deals
+
+  - type: web
+    name: backend
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    rootDir: backend
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: postgres
+          property: connectionString
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: FRED_API_KEY
+        sync: false
+      - key: COMPANIES_HOUSE_API_KEY
+        sync: false
+      - key: SEC_USER_AGENT
+        value: "DealsPlatformPoC admin@example.com"
+      - key: CORS_ORIGINS
+        value: "http://localhost:3001"
+    dependsOn:
+      - postgres
+
+  - type: web
+    name: frontend
+    runtime: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    rootDir: frontend
+    envVars:
+      - key: NEXT_PUBLIC_BACKEND_URL
+        fromService:
+          name: backend
+          property: url
+    dependsOn:
+      - backend
