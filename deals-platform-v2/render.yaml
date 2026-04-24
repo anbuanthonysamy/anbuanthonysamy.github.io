@@ -26,7 +26,7 @@ services:
       - key: SEC_USER_AGENT
         value: "DealsPlatformPoC admin@example.com"
       - key: CORS_ORIGINS
-        value: "https://frontend-zwia.onrender.com,http://localhost:3001"
+        value: "https://deals-platform.onrender.com,http://localhost:3001"
 
   - type: web
     name: frontend
