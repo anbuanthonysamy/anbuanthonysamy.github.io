@@ -28,6 +28,7 @@ services:
       COMPANIES_HOUSE_API_KEY: ${COMPANIES_HOUSE_API_KEY:-}
     volumes:
       - ./backend:/app
+      - ./scripts:/app/scripts
       - ./fixtures:/app/fixtures:ro
       - ./data:/app/data
     depends_on:

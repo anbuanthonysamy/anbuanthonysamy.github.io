@@ -39,14 +39,14 @@ export default function Page() {
   return (
     <div className="p-6 space-y-4">
       <div>
-        <h1 className="text-xl font-semibold">Sources</h1>
-        <p className="text-sm text-ink-soft mt-1 max-w-2xl">
+        <h1 className="text-xl font-semibold text-neutral-white">Sources</h1>
+        <p className="text-sm text-neutral-light-tertiary mt-1 max-w-2xl">
           Every adapter maps to a real named service. Where live fetch is unavailable,
           a fixture is returned and the row is marked <code>fixture</code>. Nothing is
           fabricated.
         </p>
       </div>
-      {err && <div className="panel p-3 text-sm text-status-risk">{err}</div>}
+      {err && <div className="panel p-3 text-sm text-data-red">{err}</div>}
       <div className="panel overflow-hidden">
         <table className="w-full">
           <thead>
@@ -67,10 +67,10 @@ export default function Page() {
                 <td className="td">
                   <ModePill mode={r.mode} />
                 </td>
-                <td className="td text-xs text-ink-muted">{relTime(r.last_refresh_at)}</td>
+                <td className="td text-xs text-neutral-dark-tertiary">{relTime(r.last_refresh_at)}</td>
                 <td className="td text-xs">
                   {r.last_error ? (
-                    <span className="text-status-risk">{r.last_error}</span>
+                    <span className="text-data-red">{r.last_error}</span>
                   ) : (
                     r.last_status || "—"
                   )}
@@ -88,7 +88,7 @@ export default function Page() {
             ))}
             {rows.length === 0 && (
               <tr>
-                <td className="td text-ink-muted" colSpan={6}>
+                <td className="td text-neutral-dark-tertiary" colSpan={6}>
                   No sources registered.
                 </td>
               </tr>

@@ -1,0 +1,100 @@
+signals:
+  # ----- CS1 M&A origination -----
+  - key: activist_13d
+    module: origination
+    description: "Activist stake disclosed via 13D/13G, often a catalyst for strategic action."
+    feeds_dimension: likelihood
+    evidence_kinds: [filing_13d, news]
+    handler: app.signals.handlers.origination.activist_13d
+
+  - key: refi_window_12_24m
+    module: origination
+    description: "Debt maturity wall inside the 12-24 month horizon."
+    feeds_dimension: timing_fit
+    evidence_kinds: [filing_10k, filing_10q]
+    handler: app.signals.handlers.origination.refi_window_12_24m
+
+  - key: adjacent_deals
+    module: origination
+    description: "Sector-adjacent deal activity creating consolidation pressure."
+    feeds_dimension: likelihood
+    evidence_kinds: [news]
+    handler: app.signals.handlers.origination.adjacent_deals
+
+  - key: mgmt_change
+    module: origination
+    description: "CEO/CFO change or board refresh signalling strategic pivot."
+    feeds_dimension: likelihood
+    evidence_kinds: [filing_8k, news]
+    handler: app.signals.handlers.origination.mgmt_change
+
+  - key: strategic_review_language
+    module: origination
+    description: "'Exploring strategic alternatives' language in public statements."
+    feeds_dimension: likelihood
+    evidence_kinds: [filing_8k, news, earnings_call]
+    handler: app.signals.handlers.origination.strategic_review_language
+
+  - key: scale_band
+    module: origination
+    description: "Expected equity value band derived from market cap."
+    feeds_dimension: expected_scale
+    evidence_kinds: [market]
+    handler: app.signals.handlers.origination.scale_band
+
+  - key: sector_weight
+    module: origination
+    description: "Configurable sector weighting from /settings."
+    feeds_dimension: sector_relevance
+    evidence_kinds: []
+    handler: app.signals.handlers.origination.sector_weight
+
+  # ----- CS2 carve-outs -----
+  - key: segment_margin_drift
+    module: carve_outs
+    description: "Specific segment margin deteriorating vs company."
+    feeds_dimension: divestment_likelihood
+    evidence_kinds: [xbrl_segment]
+    handler: app.signals.handlers.carve_outs.segment_margin_drift
+
+  - key: covenant_headroom
+    module: carve_outs
+    description: "Tightening covenant headroom or waivers."
+    feeds_dimension: urgency
+    evidence_kinds: [filing_10k, filing_10q, filing_8k]
+    handler: app.signals.handlers.carve_outs.covenant_headroom
+
+  - key: activist_breakup
+    module: carve_outs
+    description: "Activist publicly arguing for break-up/divestment."
+    feeds_dimension: divestment_likelihood
+    evidence_kinds: [news, filing_13d]
+    handler: app.signals.handlers.carve_outs.activist_breakup
+
+  - key: peer_divestment
+    module: carve_outs
+    description: "Peer companies divesting comparable assets."
+    feeds_dimension: divestment_likelihood
+    evidence_kinds: [news]
+    handler: app.signals.handlers.carve_outs.peer_divestment
+
+  - key: rating_watch
+    module: carve_outs
+    description: "Credit rating watch / downgrade action."
+    feeds_dimension: urgency
+    evidence_kinds: [news, filing_8k]
+    handler: app.signals.handlers.carve_outs.rating_watch
+
+  - key: segment_reported
+    module: carve_outs
+    description: "Segment disclosed separately — aids feasibility."
+    feeds_dimension: feasibility
+    evidence_kinds: [xbrl_segment]
+    handler: app.signals.handlers.carve_outs.segment_reported
+
+  - key: strategic_review_language_cs2
+    module: carve_outs
+    description: "Portfolio review / non-core language."
+    feeds_dimension: divestment_likelihood
+    evidence_kinds: [filing_8k, earnings_call, news]
+    handler: app.signals.handlers.carve_outs.strategic_review_language

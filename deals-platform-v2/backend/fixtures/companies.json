@@ -1,0 +1,52 @@
+[
+  {
+    "cik": "0000025202",
+    "ticker": "CONS",
+    "name": "Constellation Brands Inc",
+    "sector": "Consumer Staples",
+    "country": "US",
+    "market_cap_usd": 8200000000,
+    "net_debt_usd": 6200000000,
+    "current_pe_ratio": 15.2
+  },
+  {
+    "cik": "0000059945",
+    "ticker": "INDL",
+    "name": "Industrial Diversified Corp",
+    "sector": "Industrials",
+    "country": "US",
+    "market_cap_usd": 3500000000,
+    "net_debt_usd": 1800000000,
+    "current_pe_ratio": 12.5
+  },
+  {
+    "cik": "0000789456",
+    "ticker": "TECH",
+    "name": "TechCore Solutions Inc",
+    "sector": "Information Technology",
+    "country": "US",
+    "market_cap_usd": 5200000000,
+    "net_debt_usd": -500000000,
+    "current_pe_ratio": 28.3
+  },
+  {
+    "cik": "0000234567",
+    "ticker": "RETL",
+    "name": "RetailMax Holdings",
+    "sector": "Consumer Discretionary",
+    "country": "US",
+    "market_cap_usd": 2100000000,
+    "net_debt_usd": 950000000,
+    "current_pe_ratio": 8.9
+  },
+  {
+    "cik": "0000345678",
+    "ticker": "CHEM",
+    "name": "ChemicalWorks International",
+    "sector": "Materials",
+    "country": "US",
+    "market_cap_usd": 1850000000,
+    "net_debt_usd": 1200000000,
+    "current_pe_ratio": 11.2
+  }
+]
