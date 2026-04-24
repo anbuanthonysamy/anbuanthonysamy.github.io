@@ -39,4 +39,4 @@ services:
         fromService:
           type: web
           name: backend
-          property: url
+          property: hostport
