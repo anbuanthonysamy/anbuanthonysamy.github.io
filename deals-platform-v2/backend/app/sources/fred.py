@@ -19,23 +19,15 @@ class FRED(Source):
     id = "macro.fred"
     name = "FRED (St Louis Fed)"
     scope = DataScope.PUBLIC
-    is_stub = False
-    description = (
-        "Federal Reserve Economic Data (FRED) — official US macroeconomic time series "
-        "(treasury yields, CPI, etc.). Requires FRED_API_KEY environment variable. "
-        "Free, 120 req/min."
-    )
-    homepage_url = "https://fred.stlouisfed.org/docs/api/fred/"
 
     def fetch(self, series: str = "DGS10", **_: object) -> list[RawItem]:
         s = get_settings()
         mode = SourceMode.LIVE
-        fallback_reason: str | None = None
         url = "https://api.stlouisfed.org/fred/series/observations"
         items: list[RawItem] = []
         try:
             if not s.fred_api_key:
-                raise RuntimeError("FRED_API_KEY not configured")
+                raise RuntimeError("no FRED key")
             with httpx.Client(timeout=10) as cli:
                 r = cli.get(
                     url,
@@ -46,10 +38,6 @@ class FRED(Source):
                 obs = data.get("observations", [])[-12:]
         except Exception as e:
             log.warning("fred live fetch failed (%s): fallback fixture", e)
-            if "FRED_API_KEY not configured" in str(e):
-                fallback_reason = "FRED_API_KEY not configured"
-            else:
-                fallback_reason = f"Live fetch failed: {type(e).__name__}: {str(e)[:200]}"
             fx = _load_fixture(s.fixtures_dir, f"fred_{series}.json")
             obs = fx.get("observations", [])[-12:]
             mode = SourceMode.FIXTURE
@@ -69,7 +57,6 @@ class FRED(Source):
                     scope=DataScope.PUBLIC,
                     mode=mode,
                     meta={"series": series, "value": float(val)},
-                    fallback_reason=fallback_reason,
                 )
             )
         return items
