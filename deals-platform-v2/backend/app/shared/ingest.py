@@ -18,10 +18,6 @@ log = logging.getLogger(__name__)
 def ingest(db: Session, source: Source, items: list[RawItem]) -> int:
     count = 0
     company_cache: dict[tuple[str | None, str | None], Company | None] = {}
-    # Aggregate the most informative mode and fallback_reason across items
-    # so the Source health row reflects the actual fetch result.
-    modes_seen: set[str] = set()
-    fallback_reasons: list[str] = []
     for it in items:
         co = None
         key = (it.company_cik, it.company_ticker)
@@ -60,55 +56,23 @@ def ingest(db: Session, source: Source, items: list[RawItem]) -> int:
             company_id=co.id if co else None,
             published_at=it.published_at,
             meta=it.meta or {},
-            fallback_reason=it.fallback_reason,
         )
-        modes_seen.add(it.mode.value)
-        if it.fallback_reason and it.fallback_reason not in fallback_reasons:
-            fallback_reasons.append(it.fallback_reason)
         count += 1
 
-    # Pick the worst mode seen for source-level reporting. Order: live > fixture > stub > blocked
-    aggregate_mode = "live"
-    if "blocked" in modes_seen:
-        aggregate_mode = "blocked"
-    elif "stub" in modes_seen:
-        aggregate_mode = "stub"
-    elif "fixture" in modes_seen:
-        aggregate_mode = "fixture"
-    elif "live" in modes_seen:
-        aggregate_mode = "live"
-
-    _update_source_health(
-        db,
-        source.id,
-        source.name,
-        status="ok",
-        count=count,
-        mode=aggregate_mode,
-        fallback_reason="; ".join(fallback_reasons[:3]) if fallback_reasons else None,
-    )
+    _update_source_health(db, source.id, source.name, status="ok", count=count)
     return count
 
 
 def _update_source_health(
-    db: Session,
-    source_id: str,
-    name: str,
-    *,
-    status: str,
-    count: int,
-    mode: str = "live",
-    fallback_reason: str | None = None,
+    db: Session, source_id: str, name: str, *, status: str, count: int
 ) -> None:
     row = db.scalar(select(SourceRow).where(SourceRow.id == source_id))
     if row is None:
-        row = SourceRow(id=source_id, name=name, mode=mode)
+        row = SourceRow(id=source_id, name=name, mode="live")
         db.add(row)
     row.last_refresh_at = dt.datetime.now(dt.timezone.utc)
     row.last_status = f"{status} ({count} items)"
     row.last_error = None
-    row.mode = mode
-    row.last_fallback_reason = fallback_reason
     db.flush()
 
 
@@ -120,5 +84,4 @@ def record_source_error(db: Session, source_id: str, err: str) -> None:
     row.last_refresh_at = dt.datetime.now(dt.timezone.utc)
     row.last_status = "error"
     row.last_error = err[:2000]
-    row.last_fallback_reason = err[:500]
     db.flush()

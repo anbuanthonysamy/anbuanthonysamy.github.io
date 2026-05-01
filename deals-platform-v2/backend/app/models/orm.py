@@ -122,7 +122,6 @@ class Source(Base):
     last_status: Mapped[str | None] = mapped_column(String)
     last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
     rate_limit_per_min: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    last_fallback_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
 class Evidence(Base):
@@ -148,7 +147,6 @@ class Evidence(Base):
     sha256: Mapped[str] = mapped_column(String, index=True)
     ok: Mapped[bool] = mapped_column(Boolean, default=True)
     meta: Mapped[dict] = mapped_column(JSON, default=dict)
-    fallback_reason: Mapped[str | None] = mapped_column(String)
 
     __table_args__ = (UniqueConstraint("sha256", name="uq_evidence_sha"),)
 

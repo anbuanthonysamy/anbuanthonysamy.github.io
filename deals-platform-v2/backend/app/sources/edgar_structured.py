@@ -24,13 +24,6 @@ class EdgarSegmentFacts(Source):
     id = "edgar.xbrl_segment_facts"
     name = "SEC EDGAR XBRL Segment Facts"
     scope = DataScope.PUBLIC
-    is_stub = False
-    description = (
-        "SEC EDGAR XBRL segment-level facts — extracts per-segment revenue, "
-        "operating income, and computed margins for carve-out analysis. "
-        "Public domain, requires SEC_USER_AGENT."
-    )
-    homepage_url = "https://www.sec.gov/edgar/sec-api-documentation"
 
     def fetch(self, cik: str, company_name: str | None = None, api_mode: str = "live", **_: object) -> list[RawItem]:
         """Fetch segment-level facts for a company.
