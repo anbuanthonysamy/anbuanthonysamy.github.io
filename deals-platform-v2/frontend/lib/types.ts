@@ -1,7 +1,7 @@
 // Mirrors of backend Pydantic schemas. Keep in sync with backend/app/models/schemas.py.
 
 export type DataScope = "public" | "client";
-export type SourceMode = "live" | "fixture" | "blocked" | "stub";
+export type SourceMode = "live" | "fixture" | "blocked";
 export type ReviewState = "pending" | "accepted" | "rejected" | "edited" | "approved";
 
 export interface EvidenceOut {
@@ -18,8 +18,6 @@ export interface EvidenceOut {
   parsed_at: string | null;
   published_at: string | null;
   ok: boolean;
-  fallback_reason: string | null;
-  meta: Record<string, unknown>;
 }
 
 export interface ReviewOut {
@@ -67,25 +65,6 @@ export interface SourceHealthOut {
   last_refresh_at: string | null;
   last_status: string | null;
   last_error: string | null;
-  is_stub: boolean;
-  description: string;
-  homepage_url: string | null;
-  last_fallback_reason: string | null;
-}
-
-export interface SourceTestOut {
-  source_id: string;
-  success: boolean;
-  mode: string;
-  duration_ms: number;
-  item_count: number;
-  sample_title: string | null;
-  sample_url: string | null;
-  sample_snippet: string | null;
-  sample_published_at: string | null;
-  error: string | null;
-  fallback_reason: string | null;
-  tested_at: string;
 }
 
 export interface WeightsResponse {

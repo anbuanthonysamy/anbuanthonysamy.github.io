@@ -19,12 +19,6 @@ class EdgarSubmissions(Source):
     id = "edgar.submissions"
     name = "SEC EDGAR Submissions"
     scope = DataScope.PUBLIC
-    is_stub = False
-    description = (
-        "SEC EDGAR submissions API — public-domain index of all filings by a US "
-        "registrant. Requires a descriptive User-Agent header (set via SEC_USER_AGENT env var)."
-    )
-    homepage_url = "https://www.sec.gov/edgar/sec-api-documentation"
 
     def fetch(self, cik: str, company_name: str | None = None, api_mode: str = "live", **_: object) -> list[RawItem]:
         s = get_settings()
@@ -34,7 +28,6 @@ class EdgarSubmissions(Source):
 
         items: list[RawItem] = []
         mode = SourceMode.LIVE
-        fallback_reason: str | None = None
         try:
             with httpx.Client(timeout=10) as cli:
                 resp = cli.get(url, headers=headers)
@@ -46,7 +39,6 @@ class EdgarSubmissions(Source):
                 raise
             # In offline mode, fall back to fixture
             log.warning("edgar live fetch failed (%s): falling back to fixture", e)
-            fallback_reason = f"Live fetch failed: {type(e).__name__}: {str(e)[:200]}"
             data = _load_fixture(s.fixtures_dir, f"edgar_submissions_{cik}.json")
             mode = SourceMode.FIXTURE
 
@@ -79,7 +71,6 @@ class EdgarSubmissions(Source):
                     company_cik=cik,
                     company_name=name,
                     meta={"form": form, "accession": accession},
-                    fallback_reason=fallback_reason,
                 )
             )
         return items
@@ -89,12 +80,6 @@ class EdgarCompanyFacts(Source):
     id = "edgar.xbrl_companyfacts"
     name = "SEC EDGAR XBRL Company Facts"
     scope = DataScope.PUBLIC
-    is_stub = False
-    description = (
-        "SEC EDGAR XBRL Company Facts API — structured GAAP financial concepts "
-        "(Revenues, OperatingIncomeLoss, etc.) per fiscal year. Public domain."
-    )
-    homepage_url = "https://www.sec.gov/edgar/sec-api-documentation"
 
     def fetch(self, cik: str, company_name: str | None = None, api_mode: str = "live", **_: object) -> list[RawItem]:
         s = get_settings()
@@ -104,7 +89,6 @@ class EdgarCompanyFacts(Source):
 
         items: list[RawItem] = []
         mode = SourceMode.LIVE
-        fallback_reason: str | None = None
         try:
             with httpx.Client(timeout=15) as cli:
                 r = cli.get(url, headers=headers)
@@ -116,7 +100,6 @@ class EdgarCompanyFacts(Source):
                 raise
             # In offline mode, fall back to fixture
             log.warning("edgar xbrl live fetch failed (%s): fallback fixture", e)
-            fallback_reason = f"Live fetch failed: {type(e).__name__}: {str(e)[:200]}"
             data = _load_fixture(s.fixtures_dir, f"edgar_companyfacts_{cik}.json")
             mode = SourceMode.FIXTURE
 
@@ -156,7 +139,6 @@ class EdgarCompanyFacts(Source):
                         company_cik=cik,
                         company_name=name,
                         meta={"concept": concept, "fy": fy, "val": row.get("val")},
-                        fallback_reason=fallback_reason,
                     )
                 )
         return items
