@@ -25,6 +25,8 @@ class EvidenceOut(BaseModel):
     parsed_at: dt.datetime | None = None
     published_at: dt.datetime | None = None
     ok: bool = True
+    fallback_reason: str | None = None
+    meta: dict = Field(default_factory=dict)
 
 
 class ReviewOut(BaseModel):
@@ -106,6 +108,26 @@ class SourceHealthOut(BaseModel):
     last_refresh_at: dt.datetime | None = None
     last_status: str | None = None
     last_error: str | None = None
+    is_stub: bool = False
+    description: str = ""
+    homepage_url: str | None = None
+    last_fallback_reason: str | None = None
+
+
+class SourceTestOut(BaseModel):
+    """Result of GET /sources/{id}/test — forces a live fetch attempt."""
+    source_id: str
+    success: bool
+    mode: str  # "live" if real data, "fixture" / "stub" if not
+    duration_ms: int
+    item_count: int
+    sample_title: str | None = None
+    sample_url: str | None = None
+    sample_snippet: str | None = None
+    sample_published_at: dt.datetime | None = None
+    error: str | None = None
+    fallback_reason: str | None = None
+    tested_at: dt.datetime
 
 
 class SettingOut(BaseModel):

@@ -9,8 +9,10 @@ from app.sources.file_upload import FileUpload
 from app.sources.fred import FRED
 from app.sources.market import YFinanceMarket
 from app.sources.news import GoogleNewsRSS
+from app.sources.stubs import GDELT, GLEIF, OpenCorporates, Stooq, WorldBank
 
 ALL_SOURCES: list[Source] = [
+    # Real adapters
     EdgarSubmissions(),
     EdgarCompanyFacts(),
     EdgarSegmentFacts(),
@@ -19,6 +21,12 @@ ALL_SOURCES: list[Source] = [
     FRED(),
     CompaniesHouse(),
     FileUpload(),
+    # Stub adapters (not yet implemented)
+    GDELT(),
+    Stooq(),
+    GLEIF(),
+    OpenCorporates(),
+    WorldBank(),
 ]
 
 BY_ID: dict[str, Source] = {s.id: s for s in ALL_SOURCES}

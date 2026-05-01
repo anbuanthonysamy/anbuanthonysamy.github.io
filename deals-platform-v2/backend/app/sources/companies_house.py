@@ -54,13 +54,21 @@ class CompaniesHouse(Source):
     id = "reg.companies_house"
     name = "UK Companies House"
     scope = DataScope.PUBLIC
+    is_stub = False
+    description = (
+        "UK Companies House registry — official company records (status, SIC codes, "
+        "incorporation date). Requires COMPANIES_HOUSE_API_KEY env var. Free, "
+        "600 req/5min."
+    )
+    homepage_url = "https://developer.company-information.service.gov.uk/"
 
     def fetch(self, company_number: str, **_: object) -> list[RawItem]:
         s = get_settings()
         mode = SourceMode.LIVE
+        fallback_reason: str | None = None
         try:
             if not s.companies_house_api_key:
-                raise RuntimeError("no Companies House key")
+                raise RuntimeError("COMPANIES_HOUSE_API_KEY not configured")
             url = f"https://api.company-information.service.gov.uk/company/{company_number}"
             with httpx.Client(timeout=10, auth=(s.companies_house_api_key, "")) as cli:
                 r = cli.get(url)
@@ -68,6 +76,10 @@ class CompaniesHouse(Source):
                 data = r.json()
         except Exception as e:
             log.warning("companies house fetch failed (%s): fallback fixture", e)
+            if "COMPANIES_HOUSE_API_KEY not configured" in str(e):
+                fallback_reason = "COMPANIES_HOUSE_API_KEY not configured"
+            else:
+                fallback_reason = f"Live fetch failed: {type(e).__name__}: {str(e)[:200]}"
             fx = _load_fixture(s.fixtures_dir, f"companies_house_{company_number}.json")
             data = fx
             mode = SourceMode.FIXTURE
@@ -85,6 +97,7 @@ class CompaniesHouse(Source):
                 mode=mode,
                 company_name=name,
                 meta={"company_number": company_number, "sic_codes": data.get("sic_codes")},
+                fallback_reason=fallback_reason,
             )
         ]
 
