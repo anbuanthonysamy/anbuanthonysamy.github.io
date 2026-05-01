@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import type { SituationOut, SituationV2 } from "@/lib/types";
+import { EvidencePanel } from "./EvidencePanel";
 
 function tierLabel(tier: string | null): string {
   if (!tier) return "Monitor";
@@ -208,6 +209,16 @@ export function SituationDetailV2({ situation, onReviewChange }: { situation: Si
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {/* Evidence */}
+      {v1Sit && (
+        <div>
+          <h3 className="text-sm font-semibold text-neutral-white mb-2">
+            Evidence ({v1Sit.evidence.length})
+          </h3>
+          <EvidencePanel items={v1Sit.evidence} />
         </div>
       )}
 
