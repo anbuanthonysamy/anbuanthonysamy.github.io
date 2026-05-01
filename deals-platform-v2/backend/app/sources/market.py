@@ -37,6 +37,13 @@ class YFinanceMarket(Source):
     id = "market.yfinance"
     name = "Yahoo Finance (yfinance)"
     scope = DataScope.PUBLIC
+    is_stub = False
+    description = (
+        "Market data via the unofficial yfinance Python library (price, market cap, "
+        "PE ratio, debt, margins, 52-week performance). Acceptable for research PoC, "
+        "not for production. No API key, but Yahoo TOS applies."
+    )
+    homepage_url = "https://pypi.org/project/yfinance/"
 
     def fetch(
         self,
@@ -56,6 +63,7 @@ class YFinanceMarket(Source):
         """
         s = get_settings()
         mode = SourceMode.LIVE
+        fallback_reason: str | None = None
         yahoo_symbol = _yahoo_ticker(ticker, country)
         try:
             import yfinance  # type: ignore
@@ -85,6 +93,7 @@ class YFinanceMarket(Source):
                 raise
             # In offline mode, fall back to fixture
             log.warning("yfinance live fetch failed (%s): fallback fixture", e)
+            fallback_reason = f"Live fetch failed: {type(e).__name__}: {str(e)[:200]}"
             fx = _load_fixture(s.fixtures_dir, "market_yf.json")
             row = fx.get(ticker, {})
             mcap = float(row.get("market_cap", 0) or 0)
@@ -128,6 +137,7 @@ class YFinanceMarket(Source):
                     "ebitda_margins": ebitda_margins,
                     "return_on_assets": return_on_assets,
                 },
+                fallback_reason=fallback_reason,
             )
         ]
 

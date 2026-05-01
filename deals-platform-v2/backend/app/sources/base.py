@@ -23,15 +23,26 @@ class RawItem:
     company_ticker: str | None = None
     company_name: str | None = None
     meta: dict | None = None
+    fallback_reason: str | None = None  # populated when mode != LIVE
 
 
 class Source(abc.ABC):
     id: str
     name: str
     scope: DataScope = DataScope.PUBLIC
+    is_stub: bool = False  # True = adapter not implemented, always returns fixtures
+    description: str = ""  # human-readable description for UI
+    homepage_url: str | None = None  # link to the source's documentation/site
 
     @abc.abstractmethod
     def fetch(self, **kwargs) -> list[RawItem]: ...
 
     def health(self) -> dict:
-        return {"id": self.id, "name": self.name, "scope": self.scope.value}
+        return {
+            "id": self.id,
+            "name": self.name,
+            "scope": self.scope.value,
+            "is_stub": self.is_stub,
+            "description": self.description,
+            "homepage_url": self.homepage_url,
+        }
