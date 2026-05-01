@@ -4,6 +4,7 @@ import type {
   SituationOut,
   SituationV2,
   SourceHealthOut,
+  SourceTestOut,
   WeightsResponse,
 } from "./types";
 
@@ -13,6 +14,7 @@ const LIVE_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000"
 type Mutation =
   | "review"
   | "refreshSource"
+  | "testSource"
   | "setWeights"
   | "runOrigination"
   | "postDealCompute";
@@ -102,6 +104,14 @@ export const api = {
         body: JSON.stringify({}),
       });
     throw staticReadOnlyError("refreshSource");
+  },
+  testSource: async (id: string, payload: Record<string, unknown> = {}): Promise<SourceTestOut> => {
+    if (!isStatic)
+      return liveReq<SourceTestOut>(`/sources/${id}/test`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+    throw staticReadOnlyError("testSource");
   },
   weights: async (module: string): Promise<WeightsResponse> => {
     if (!isStatic) return liveReq<WeightsResponse>(`/settings/weights/${module}`);

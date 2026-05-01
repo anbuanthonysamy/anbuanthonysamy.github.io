@@ -26,6 +26,7 @@ def upsert_evidence(
     published_at: dt.datetime | None = None,
     meta: dict | None = None,
     ok: bool = True,
+    fallback_reason: str | None = None,
 ) -> Evidence:
     sha = evidence_hash(
         source_id,
@@ -37,6 +38,8 @@ def upsert_evidence(
     if existing:
         existing.retrieved_at = dt.datetime.now(dt.timezone.utc)
         existing.parsed_at = existing.parsed_at or existing.retrieved_at
+        existing.mode = mode.value
+        existing.fallback_reason = fallback_reason
         return existing
 
     ev = Evidence(
@@ -54,6 +57,7 @@ def upsert_evidence(
         sha256=sha,
         ok=ok,
         meta=meta or {},
+        fallback_reason=fallback_reason,
     )
     db.add(ev)
     db.flush()
