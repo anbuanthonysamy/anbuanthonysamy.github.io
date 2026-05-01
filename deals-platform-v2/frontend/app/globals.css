@@ -12,12 +12,11 @@ html, body {
   @apply inline-flex items-center px-2 py-0.5 text-xs rounded border border-neutral-dark-secondary bg-neutral-dark-secondary text-neutral-light-tertiary;
 }
 .pill-mock {
-  @apply bg-neutral-dark-secondary text-amber-400 border-amber-700;
+  @apply bg-neutral-dark-secondary text-purple-400 border-neutral-dark-tertiary;
 }
-.pill-ok     { @apply bg-neutral-dark-secondary text-emerald-400 border-emerald-700; }
+.pill-ok     { @apply bg-neutral-dark-secondary text-emerald-400 border-neutral-dark-tertiary; }
 .pill-warn   { @apply bg-neutral-dark-secondary text-data-yellow border-neutral-dark-tertiary; }
-.pill-risk   { @apply bg-neutral-dark-secondary text-data-red border-red-700; }
-.pill-stub   { @apply bg-neutral-dark-secondary text-purple-400 border-purple-700; }
+.pill-risk   { @apply bg-neutral-dark-secondary text-data-red border-neutral-dark-tertiary; }
 .panel {
   @apply bg-neutral-dark-bg border border-neutral-dark-secondary rounded shadow-sm;
 }

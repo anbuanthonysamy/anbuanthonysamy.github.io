@@ -25,13 +25,6 @@ class GoogleNewsRSS(Source):
     id = "news.google_rss"
     name = "Google News RSS"
     scope = DataScope.PUBLIC
-    is_stub = False
-    description = (
-        "Public RSS feed of Google News search results. No API key required, but "
-        "Google blocks automated requests from many IPs (returns 403). Falls back "
-        "to fixture data when blocked."
-    )
-    homepage_url = "https://news.google.com/rss"
 
     def fetch(self, query: str, limit: int = 30, **_: object) -> list[RawItem]:
         s = get_settings()
@@ -40,7 +33,6 @@ class GoogleNewsRSS(Source):
             f"{httpx.QueryParams({'q': query})['q']}&hl=en-US&gl=US&ceid=US:en"
         )
         mode = SourceMode.LIVE
-        fallback_reason: str | None = None
         try:
             if feedparser is None:
                 raise RuntimeError("feedparser not installed")
@@ -53,7 +45,6 @@ class GoogleNewsRSS(Source):
                     raise RuntimeError("empty feed")
         except Exception as e:
             log.warning("google news live fetch failed (%s): fallback fixture", e)
-            fallback_reason = f"Live fetch failed: {type(e).__name__}: {str(e)[:200]}"
             fx = _load_fixture(s.fixtures_dir, "news_google.json")
             entries = [
                 _DictEntry(**d)
@@ -87,7 +78,6 @@ class GoogleNewsRSS(Source):
                     mode=mode,
                     company_name=None,
                     meta={"query": query},
-                    fallback_reason=fallback_reason,
                 )
             )
         return out

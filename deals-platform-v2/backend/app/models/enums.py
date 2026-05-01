@@ -20,7 +20,6 @@ class SourceMode(str, Enum):
     LIVE = "live"
     FIXTURE = "fixture"
     BLOCKED = "blocked"
-    STUB = "stub"
 
 
 class Module(str, Enum):

@@ -14,13 +14,6 @@ class FileUpload(Source):
     id = "upload.file"
     name = "FileUpload"
     scope = DataScope.CLIENT
-    is_stub = False
-    description = (
-        "Client file uploads (CSV/XLSX) — used by CS3 (post-deal) and CS4 (working "
-        "capital) for AR, AP, inventory, and KPI data. Always live (user-controlled, "
-        "never shared with CS1/CS2 modules)."
-    )
-    homepage_url = None
 
     def fetch(self, file_path: str, module: str, kind: str, **_: object) -> list[RawItem]:
         p = Path(file_path)
